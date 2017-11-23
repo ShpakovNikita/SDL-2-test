@@ -31,6 +31,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
         return EXIT_FAILURE;
     }
 
-    std::cout << "Yes!" << std::endl;
+    std::cout << "Ye" << std::endl;
     return EXIT_SUCCESS;
 }
