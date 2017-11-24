@@ -16,7 +16,15 @@ int main(int /*argc*/, char* /*argv*/ []) {
     while (state) {
         event e;
 
-        while (eng->read_input()) {
+        while (eng->read_input(e)) {
+            std::cout << e << std::endl;
+            switch (e) {
+                case event::turn_off:
+                    state = false;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 

@@ -6,6 +6,7 @@
  */
 
 #include "headers/engine.hxx"
+#include <algorithm>
 #include <array>
 #include <iostream>
 
@@ -48,6 +49,20 @@ std::ostream& operator<<(std::ostream& stream, const event e) {
     } else {
         throw std::runtime_error("too big event value");
     }
+}
+
+static bool check_input(const SDL_Event& e, const bind*& result) {
+    using namespace std;
+
+    const auto it =
+        find_if(bindings.begin(), bindings.end(),
+                [&](const bind& b) { return b.key == e.key.keysym.sym; });
+
+    if (it != bindings.end()) {
+        result = &(*it);
+        return true;
+    }
+    return false;
 }
 
 namespace CHL {
@@ -96,8 +111,33 @@ void engine::CHL_exit() {
     return (void)EXIT_SUCCESS;
 }
 
-bool engine::read_input() {
-    return true;
+bool engine::read_input(event& e) {
+    SDL_Event event;
+
+    if (SDL_PollEvent(&event)) {
+        const bind* binding = nullptr;
+
+        switch (event.type) {
+            case SDL_QUIT:
+                e = event::turn_off;
+                return true;
+            case SDL_KEYDOWN:
+                if (check_input(event, binding)) {
+                    e = binding->event_pressed;
+                    return true;
+                }
+                break;
+            case SDL_KEYUP:
+                if (check_input(event, binding)) {
+                    e = binding->event_released;
+                    return true;
+                }
+                break;
+            default:
+                break;
+        }
+    }
+    return false;
 }
 
 }    // namespace CHL

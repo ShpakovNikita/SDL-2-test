@@ -54,7 +54,7 @@ class engine {
 
     int CHL_init(std::string);
 
-    bool read_input();
+    bool read_input(event&);
     void CHL_exit();
 
    private:
