@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <array>
 #include <cstdlib>
 #include <iostream>
 
@@ -16,6 +18,32 @@ struct bind {
     SDL_Keycode key;
     std::string name;
 };
+
+void process_input(SDL_Event e) {
+    std::array<bind, 8> bindings{bind(SDLK_w, "up"),
+                                 bind(SDLK_a, "left"),
+                                 bind(SDLK_s, "down"),
+                                 bind(SDLK_d, "right"),
+                                 bind(SDLK_ESCAPE, "esc (select)"),
+                                 bind(SDLK_RETURN, "enter (start)"),
+                                 bind(SDLK_j, "a button"),
+                                 bind(SDLK_k, "b button")};
+
+    const auto it =
+        find_if(bindings.begin(), bindings.end(),
+                [&](const bind& b) { return b.key == e.key.keysym.sym; });
+
+    if (it != bindings.end()) {
+        std::cout << it->name;
+        if (e.type == SDL_KEYDOWN)
+            std::cout << " is pressed" << std::endl;
+
+        else
+            std::cout << " is released" << std::endl;
+    }
+
+    return (void)EXIT_SUCCESS;
+}
 
 int main(int /*argc*/, char* /*argv*/ []) {
     SDL_version compiled = {0, 0, 0};
@@ -51,20 +79,22 @@ int main(int /*argc*/, char* /*argv*/ []) {
     }
 
     SDL_bool state = SDL_TRUE;
-    while(state)
-    {
-    	SDL_Event event;
-    	while(SDL_PollEvent(&event))
-    	{
-    		switch(event.type)
-    		{
-    		case SDL_QUIT:
-    			state = SDL_FALSE;
-    			break;
-    		default:
-    			break;
-    		}
-    	}
+    while (state) {
+        SDL_Event event;
+        while (SDL_PollEvent(&event)) {
+            switch (event.type) {
+                case SDL_KEYUP:
+
+                case SDL_KEYDOWN:
+                    process_input(event);
+                    break;
+                case SDL_QUIT:
+                    state = SDL_FALSE;
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     SDL_DestroyWindow(window);
