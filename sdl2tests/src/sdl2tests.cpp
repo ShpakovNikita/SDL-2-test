@@ -10,6 +10,13 @@ std::ostream& operator<<(std::ostream& out, const SDL_version& v) {
     return out;
 }
 
+struct bind {
+    bind(SDL_Keycode k, std::string n) : key(k), name(n) {}
+
+    SDL_Keycode key;
+    std::string name;
+};
+
 int main(int /*argc*/, char* /*argv*/ []) {
     SDL_version compiled = {0, 0, 0};
     SDL_version linked = {0, 0, 0};
@@ -39,8 +46,28 @@ int main(int /*argc*/, char* /*argv*/ []) {
         const char* err_message = SDL_GetError();
         std::cerr << "error: failed call SDL_Init: " << err_message
                   << std::endl;
+        SDL_Quit();
         return EXIT_FAILURE;
     }
 
+    SDL_bool state = SDL_TRUE;
+    while(state)
+    {
+    	SDL_Event event;
+    	while(SDL_PollEvent(&event))
+    	{
+    		switch(event.type)
+    		{
+    		case SDL_QUIT:
+    			state = SDL_FALSE;
+    			break;
+    		default:
+    			break;
+    		}
+    	}
+    }
+
+    SDL_DestroyWindow(window);
+    SDL_Quit();
     return EXIT_SUCCESS;
 }
