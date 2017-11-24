@@ -46,7 +46,6 @@ struct bind {
 
 namespace CHL    // chlorine-5
 {
-
 class engine {
    public:
     engine();
