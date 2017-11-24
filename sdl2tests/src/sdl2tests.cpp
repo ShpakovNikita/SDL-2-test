@@ -35,5 +35,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
         SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
                          SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL);
 
+    if (window == nullptr) {
+        const char* err_message = SDL_GetError();
+        std::cerr << "error: failed call SDL_Init: " << err_message
+                  << std::endl;
+        return EXIT_FAILURE;
+    }
+
     return EXIT_SUCCESS;
 }
