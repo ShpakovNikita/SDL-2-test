@@ -29,9 +29,9 @@ void process_input(SDL_Event e) {
                                  bind(SDLK_j, "a button"),
                                  bind(SDLK_k, "b button")};
 
-    const auto it =
-        find_if(bindings.begin(), bindings.end(),
-                [&](const bind& b) { return b.key == e.key.keysym.sym; });
+    auto it =
+        std::find_if(bindings.begin(), bindings.end(),
+                     [&](const bind& b) { return b.key == e.key.keysym.sym; });
 
     if (it != bindings.end()) {
         std::cout << it->name;
