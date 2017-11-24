@@ -31,9 +31,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
         return EXIT_FAILURE;
     }
 
-    SDL_Window* const window =
-        SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
-                         SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL);
-
+    std::cout << "Yes!" << std::endl;
     return EXIT_SUCCESS;
 }

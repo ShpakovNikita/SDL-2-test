@@ -1,0 +1,57 @@
+dist:     trusty    # используем Ubuntu 14.04 Trusty Tahr
+sudo:     required  # используем Virtual Machine
+language: cpp      
+
+
+os:
+    - linux
+    #- osx
+
+compiler:
+    - gcc
+    #- clang
+
+env:
+    # список переменных окружения, влияющих на матрицу сборки:
+    #- TARGET_CPU=amd64 BUILD_CONFIGURATION=Debug
+    #- TARGET_CPU=amd64 BUILD_CONFIGURATION=Release
+
+#matrix:
+#    exclude:
+#        - os:       osx
+#          compiler: gcc
+before_install:
+    - sudo apt-get install libsdl2-2.0-0
+    - wget https://www.libsdl.org/release/SDL2-2.0.7.tar.gz -O SDL2-2.0.7.tar.gz
+    - tar -xzvf SDL2-2.0.7.tar.gz
+    
+install:
+    - "(cd SDL2-2.0.7 && ./configure && make && sudo make install)"
+
+script:    
+    - cd $TRAVIS_BUILD_DIR/sdl2tests/src
+    - 'if [ ! -d "./build" ];
+        then mkdir build;
+       fi'
+    - cd build
+    - cmake ..
+    - make
+    # скрипт сборки и тестирования проекта, пока отложим))0):
+    #- source $TRAVIS_BUILD_DIR/ci/travis/set-env.sh
+    #- bash $TRAVIS_BUILD_DIR/ci/travis/install-$TRAVIS_OS_NAME.sh
+    
+notifications:
+    email: false
+
+#Тест. Не нужно.
+deploy:
+    provider:     releases
+    file:         <package-file>
+    skip_cleanup: true
+    overwrite:    true
+
+    api_key:
+        secure:   <encrypted-github-token>
+
+    on:
+        tags:     true
