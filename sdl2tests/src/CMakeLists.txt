@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(SOURCE sdl2tests.cpp)
 
 set(PROJECT_LINK_LIB -lSDL2main -lSDL2)
+# -mwindows -lmingw32
 
 link_directories(${PROJECT_LIBS_DIR})
 
