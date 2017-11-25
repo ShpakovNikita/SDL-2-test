@@ -11,7 +11,6 @@ constexpr int WINDOW_HEIGHT = 480;
 
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
-
     engine* const eng = new engine();
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT);
 

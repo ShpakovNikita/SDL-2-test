@@ -93,9 +93,9 @@ int engine::CHL_init(int width, int height) {
         return EXIT_FAILURE;
     }
 
-    window = SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
-                              SDL_WINDOWPOS_CENTERED, width, height,
-                              SDL_WINDOW_OPENGL);
+    this->window = SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
+                                    SDL_WINDOWPOS_CENTERED, width, height,
+                                    SDL_WINDOW_OPENGL);
 
     if (window == nullptr) {
         const char* err_message = SDL_GetError();
