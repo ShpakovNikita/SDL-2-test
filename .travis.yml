@@ -37,13 +37,13 @@ script:
     - cmake ..
     - make
     
-    #- cd $TRAVIS_BUILD_DIR/sdl2-engine/src
-    #- 'if [ ! -d "./build" ];
-    #    then mkdir build;
-    #   fi'
-    #- cd build
-    #- cmake ..
-    #- make
+    - cd $TRAVIS_BUILD_DIR/sdl2-engine/src
+    - 'if [ ! -d "./build" ];
+        then mkdir build;
+       fi'
+    - cd build
+    - cmake ..
+    - make
     # later)
     
     # скрипт сборки и тестирования проекта, пока отложим))0):
