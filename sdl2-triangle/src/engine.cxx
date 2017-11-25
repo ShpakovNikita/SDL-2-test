@@ -6,7 +6,7 @@
  */
 
 #include "headers/engine.hxx"
-#include <SDL2/SDL_opengles2_gl2.h>
+#include <SDL2/SDL_opengl.h>
 #include <assert.h>
 #include <algorithm>
 #include <array>
@@ -120,6 +120,11 @@ int engine::CHL_init(int width, int height) {
 
     std::cerr << "Gl:" << gl_major_ver << '.' << gl_minor_ver << std::endl;
 
+    glClearColor(0.f, 1.0, 0.f, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    SDL_GL_SwapWindow(window);
+    glGetError();
     return EXIT_SUCCESS;
 }
 

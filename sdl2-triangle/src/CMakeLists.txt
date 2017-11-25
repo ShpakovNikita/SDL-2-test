@@ -7,7 +7,7 @@ set(SOURCE game.cpp engine.cxx headers/engine.hxx)
 if(UNIX)
     set(PROJECT_LINK_LIB -lSDL2main -lSDL2)
 else()
-    set(PROJECT_LINK_LIB -lmingw32 -lSDL2main -lSDL2 -mwindows)
+    set(PROJECT_LINK_LIB -lmingw32 -lSDL2main -lSDL2 -mwindows -lopengl32)
 endif(UNIX)
 
 #-lmingw32  -mwindows
