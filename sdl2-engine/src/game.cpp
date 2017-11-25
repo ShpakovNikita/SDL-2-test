@@ -6,21 +6,24 @@
 
 #include "headers/engine.hxx"
 
+constexpr int WINDOW_WIDTH = 640;
+constexpr int WINDOW_HEIGHT = 480;
+
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
 
     engine* const eng = new engine();
-    eng->CHL_init("");
+    eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT);
 
-    bool state = true;
-    while (state) {
+    bool quit = false;
+    while (!quit) {
         event e;
 
         while (eng->read_input(e)) {
             std::cout << e << std::endl;
             switch (e) {
                 case event::turn_off:
-                    state = false;
+                    quit = true;
                     break;
                 default:
                     break;

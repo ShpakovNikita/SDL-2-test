@@ -43,7 +43,10 @@ std::ostream& operator<<(std::ostream& stream, const event e) {
     std::uint32_t value = static_cast<std::uint32_t>(e);
     std::uint32_t minimal = static_cast<std::uint32_t>(event::left_pressed);
     std::uint32_t maximal = static_cast<std::uint32_t>(event::turn_off);
-    if (value >= minimal && value <= maximal) {
+    if (value >= minimal && value <= maximal) {    ///По идее вообще это не
+                                                   ///должно никогда отрабоатать
+                                                   ///так как сюда поступают
+                                                   ///лишь уже отсеенные события
         stream << event_names[value];
         return stream;
     } else {
@@ -69,7 +72,7 @@ namespace CHL {
 engine::engine() {}
 engine::~engine() {}
 
-int engine::CHL_init(std::string /*configure*/) {
+int engine::CHL_init(int width, int height) {
     SDL_version compiled = {0, 0, 0};
     SDL_version linked = {0, 0, 0};
 
@@ -90,9 +93,9 @@ int engine::CHL_init(std::string /*configure*/) {
         return EXIT_FAILURE;
     }
 
-    window =
-        SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
-                         SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_OPENGL);
+    window = SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
+                              SDL_WINDOWPOS_CENTERED, width, height,
+                              SDL_WINDOW_OPENGL);
 
     if (window == nullptr) {
         const char* err_message = SDL_GetError();

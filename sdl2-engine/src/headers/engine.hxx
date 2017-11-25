@@ -51,7 +51,7 @@ class engine {
     engine();
     virtual ~engine();
 
-    int CHL_init(std::string);
+    int CHL_init(int, int);
 
     bool read_input(event&);
     void CHL_exit();
