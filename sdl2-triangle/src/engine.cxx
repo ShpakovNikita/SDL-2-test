@@ -124,7 +124,6 @@ int engine::CHL_init(int width, int height) {
     glClear(GL_COLOR_BUFFER_BIT);
 
     SDL_GL_SwapWindow(window);
-    glGetError();
     return EXIT_SUCCESS;
 }
 
