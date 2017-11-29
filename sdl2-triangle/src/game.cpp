@@ -11,7 +11,9 @@ constexpr int WINDOW_HEIGHT = 480;
 
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
-    engine* const eng = new engine();
+    std::unique_ptr<engine, void (*)(engine*)> eng(create_engine(),
+                                                   destroy_engine);
+
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT);
 
     bool quit = false;

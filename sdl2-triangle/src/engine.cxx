@@ -4,13 +4,26 @@
  *  Created on: 24 нояб. 2017 г.
  *      Author: Shaft
  */
-
 #include "headers/engine.hxx"
+
+#include <SDL2/SDL.h>
+
 #include <SDL2/SDL_opengl.h>
 #include <assert.h>
 #include <algorithm>
 #include <array>
 #include <iostream>
+
+namespace CHL {
+struct bind {
+    bind(SDL_Keycode k, std::string n, event pressed, event released)
+        : key(k), name(n), event_pressed(pressed), event_released(released) {}
+
+    SDL_Keycode key;
+    std::string name;
+    event event_pressed;
+    event event_released;
+};
 
 static std::array<std::string, 17> event_names = {
     /// input events
@@ -70,97 +83,122 @@ static bool check_input(const SDL_Event& e, const bind*& result) {
     return false;
 }
 
-namespace CHL {
 engine::engine() {}
-engine::~engine() {}
-
-int engine::CHL_init(int width, int height) {
-    SDL_version compiled = {0, 0, 0};
-    SDL_version linked = {0, 0, 0};
-
-    SDL_VERSION(&compiled);
-    SDL_GetVersion(&linked);
-
-    if (SDL_COMPILEDVERSION !=
-        SDL_VERSIONNUM(linked.major, linked.minor, linked.patch)) {
-        std::cerr << "warning: SDL2 compiled and linked version mismatch: "
-                  << compiled << " " << linked << std::endl;
-    }
-
-    const int init_result = SDL_Init(SDL_INIT_EVERYTHING);
-    if (init_result != 0) {
-        const char* err_message = SDL_GetError();
-        std::cerr << "error: failed call SDL_Init: " << err_message
-                  << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    this->window = SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
-                                    SDL_WINDOWPOS_CENTERED, width, height,
-                                    SDL_WINDOW_OPENGL);
-
-    if (window == nullptr) {
-        const char* err_message = SDL_GetError();
-        std::cerr << "error: failed call SDL_Init: " << err_message
-                  << std::endl;
-        SDL_Quit();
-        return EXIT_FAILURE;
-    }
-
-    SDL_GLContext gl_context = SDL_GL_CreateContext(window);
-    assert(gl_context != nullptr);
-
-    int gl_major_ver = 0;
-    int res = SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &gl_major_ver);
-    assert(res == 0);
-
-    int gl_minor_ver = 0;
-    res = SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &gl_minor_ver);
-    assert(res == 0);
-
-    std::cerr << "Gl:" << gl_major_ver << '.' << gl_minor_ver << std::endl;
-
-    glClearColor(0.f, 1.0, 0.f, 1.0);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    SDL_GL_SwapWindow(window);
-    return EXIT_SUCCESS;
-}
-
-void engine::CHL_exit() {
-    SDL_DestroyWindow(window);
+engine::~engine() {
     SDL_Quit();
-    return (void)EXIT_SUCCESS;
 }
 
-bool engine::read_input(event& e) {
-    SDL_Event event;
+class engine_impl final : public engine {
+   public:
+    int CHL_init(int width, int height) {
+        SDL_version compiled = {0, 0, 0};
+        SDL_version linked = {0, 0, 0};
 
-    if (SDL_PollEvent(&event)) {
-        const bind* binding = nullptr;
+        SDL_VERSION(&compiled);
+        SDL_GetVersion(&linked);
 
-        switch (event.type) {
-            case SDL_QUIT:
-                e = event::turn_off;
-                return true;
-            case SDL_KEYDOWN:
-                if (check_input(event, binding)) {
-                    e = binding->event_pressed;
-                    return true;
-                }
-                break;
-            case SDL_KEYUP:
-                if (check_input(event, binding)) {
-                    e = binding->event_released;
-                    return true;
-                }
-                break;
-            default:
-                break;
+        if (SDL_COMPILEDVERSION !=
+            SDL_VERSIONNUM(linked.major, linked.minor, linked.patch)) {
+            std::cerr << "warning: SDL2 compiled and linked version mismatch: "
+                      << compiled << " " << linked << std::endl;
         }
+
+        const int init_result = SDL_Init(SDL_INIT_EVERYTHING);
+        if (init_result != 0) {
+            const char* err_message = SDL_GetError();
+            std::cerr << "error: failed call SDL_Init: " << err_message
+                      << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        SDL_Window* const window = SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
+                                  SDL_WINDOWPOS_CENTERED, width, height,
+                                  SDL_WINDOW_OPENGL);
+
+        if (window == nullptr) {
+            const char* err_message = SDL_GetError();
+            std::cerr << "error: failed call SDL_Init: " << err_message
+                      << std::endl;
+            SDL_Quit();
+            return EXIT_FAILURE;
+        }
+
+        SDL_GLContext gl_context = SDL_GL_CreateContext(window);
+        assert(gl_context != nullptr);
+
+        int gl_major_ver = 0;
+        int res =
+            SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &gl_major_ver);
+        assert(res == 0);
+
+        int gl_minor_ver = 0;
+        res = SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &gl_minor_ver);
+        assert(res == 0);
+
+        std::cerr << "Gl:" << gl_major_ver << '.' << gl_minor_ver << std::endl;
+
+        glClearColor(0.f, 1.0, 0.f, 1.0);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        SDL_GL_SwapWindow(window);
+        return EXIT_SUCCESS;
     }
 
-    return false;
+    void CHL_exit() final {
+        SDL_Quit();
+        return (void)EXIT_SUCCESS;
+    }
+
+    bool read_input(event& e) final {
+        SDL_Event event;
+
+        if (SDL_PollEvent(&event)) {
+            const bind* binding = nullptr;
+
+            switch (event.type) {
+                case SDL_QUIT:
+                    e = event::turn_off;
+                    return true;
+                case SDL_KEYDOWN:
+                    if (check_input(event, binding)) {
+                        e = binding->event_pressed;
+                        return true;
+                    }
+                    break;
+                case SDL_KEYUP:
+                    if (check_input(event, binding)) {
+                        e = binding->event_released;
+                        return true;
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        return false;
+    }
+};
+
+bool already_exist = false;
+
+engine* create_engine() {
+    if (already_exist) {
+        throw std::runtime_error("engine already exist");
+    }
+    engine* result = new engine_impl();
+    already_exist = true;
+    return result;
+}
+
+void destroy_engine(engine* e) {
+    if (already_exist == false) {
+        throw std::runtime_error("Engine is not created");
+    }
+    if (nullptr == e) {
+        throw std::runtime_error("Engine is null");
+    }
+    delete e;
 }
 
 }    // namespace CHL

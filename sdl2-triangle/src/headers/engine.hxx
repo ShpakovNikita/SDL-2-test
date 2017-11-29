@@ -10,8 +10,8 @@
 
 #include <string>
 
-#include "SDL2/SDL.h"
-
+namespace CHL    // chlorine-5
+{
 enum class event {
     /// input events
     left_pressed,
@@ -34,33 +34,23 @@ enum class event {
     turn_off
 };
 
-struct bind {
-    bind(SDL_Keycode k, std::string n, event pressed, event released)
-        : key(k), name(n), event_pressed(pressed), event_released(released) {}
+class engine;
 
-    SDL_Keycode key;
-    std::string name;
-    event event_pressed;
-    event event_released;
-};
+engine* create_engine();
+void destroy_engine(engine* e);
 
-namespace CHL    // chlorine-5
-{
 class engine {
    public:
     engine();
     virtual ~engine();
 
-    int CHL_init(int, int);
-    bool read_input(event&);
-    void CHL_exit();
-
-   private:
-    SDL_Window* window = nullptr;
+    virtual int CHL_init(int, int) = 0;
+    virtual bool read_input(event&) = 0;
+    virtual void CHL_exit() = 0;
 };
-}    // namespace CHL
 
-std::ostream& operator<<(std::ostream& out, const SDL_version& v);
 std::ostream& operator<<(std::ostream& stream, const event e);
+
+}    // namespace CHL
 
 #endif /* HEADERS_ENGINE_HXX_ */
