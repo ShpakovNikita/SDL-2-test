@@ -8,6 +8,7 @@
 #ifndef HEADERS_ENGINE_HXX_
 #define HEADERS_ENGINE_HXX_
 
+#include <array>
 #include <string>
 
 namespace CHL    // chlorine-5
@@ -34,6 +35,25 @@ enum class event {
     turn_off
 };
 
+struct vertex_2d {
+    vertex_2d() : x(0.f), y(0.f) {}
+
+    double x, y;
+};
+
+struct triangle {
+    triangle() {
+        vertices[0] = vertex_2d();
+        vertices[1] = vertex_2d();
+        vertices[2] = vertex_2d();
+    }
+
+    std::array<vertex_2d, 3> vertices;
+};
+
+std::istream& operator>>(std::istream& in, vertex_2d& v);
+std::istream& operator>>(std::istream& in, triangle& t);
+
 class engine;
 
 engine* create_engine();
@@ -47,6 +67,7 @@ class engine {
     virtual int CHL_init(int, int) = 0;
     virtual bool read_input(event&) = 0;
     virtual void CHL_exit() = 0;
+    virtual void draw_triangle(triangle) = 0;
 };
 
 std::ostream& operator<<(std::ostream& stream, const event e);

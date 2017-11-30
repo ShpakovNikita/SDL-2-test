@@ -1,10 +1,13 @@
 #include <algorithm>
 #include <array>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <memory>
 
 #include "headers/engine.hxx"
+
+const std::string VERTEX_FILE = "vertices.txt";
 
 constexpr int WINDOW_WIDTH = 640;
 constexpr int WINDOW_HEIGHT = 480;
@@ -30,6 +33,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     break;
             }
         }
+
+        std::ifstream fin(VERTEX_FILE);
+        triangle t;
+        fin >> t;
+
+        eng->draw_triangle(t);
     }
 
     eng->CHL_exit();

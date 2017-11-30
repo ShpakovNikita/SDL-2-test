@@ -11,7 +11,6 @@
 #include <SDL2/SDL_opengl.h>
 #include <assert.h>
 #include <algorithm>
-#include <array>
 #include <iostream>
 
 namespace CHL {
@@ -46,6 +45,19 @@ const std::array<bind, 8> bindings{
          event::button2_released},
     bind{SDLK_ESCAPE, "select", event::select_pressed, event::select_released},
     bind{SDLK_RETURN, "start", event::start_pressed, event::start_released}};
+
+std::istream& operator>>(std::istream& in, vertex_2d& v) {
+    in >> v.x;
+    in >> v.y;
+    return in;
+}
+
+std::istream& operator>>(std::istream& in, triangle& t) {
+    in >> t.vertices[0];
+    in >> t.vertices[1];
+    in >> t.vertices[2];
+    return in;
+}
 
 std::ostream& operator<<(std::ostream& out, const SDL_version& v) {
     out << static_cast<int>(v.major) << '.';
@@ -89,6 +101,9 @@ engine::~engine() {
 }
 
 class engine_impl final : public engine {
+   private:
+    SDL_Window* window = nullptr;
+
    public:
     int CHL_init(int width, int height) {
         SDL_version compiled = {0, 0, 0};
@@ -111,7 +126,7 @@ class engine_impl final : public engine {
             return EXIT_FAILURE;
         }
 
-        SDL_Window* const window = SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
+        window = SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
                                   SDL_WINDOWPOS_CENTERED, width, height,
                                   SDL_WINDOW_OPENGL);
 
@@ -137,14 +152,18 @@ class engine_impl final : public engine {
 
         std::cerr << "Gl:" << gl_major_ver << '.' << gl_minor_ver << std::endl;
 
+        return EXIT_SUCCESS;
+    }
+
+    void draw_triangle(triangle t) {
         glClearColor(0.f, 1.0, 0.f, 1.0);
         glClear(GL_COLOR_BUFFER_BIT);
 
         SDL_GL_SwapWindow(window);
-        return EXIT_SUCCESS;
     }
 
     void CHL_exit() final {
+        SDL_DestroyWindow(window);
         SDL_Quit();
         return (void)EXIT_SUCCESS;
     }
