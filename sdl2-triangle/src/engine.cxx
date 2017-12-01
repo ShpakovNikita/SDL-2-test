@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
+#include <math.h>
 #include <sstream>
 
 #include <windows.h>
@@ -183,6 +184,7 @@ engine::~engine() {
 class engine_impl final : public engine {
    private:
     SDL_Window* window = nullptr;
+    GLuint shader_program;
 
     void GL_unbind() {
         glBindBuffer(GL_ARRAY_BUFFER, 0);    // test
@@ -290,20 +292,22 @@ class engine_impl final : public engine {
         glViewport(0, 0, width, height);
         // test
 
-        return EXIT_SUCCESS;
-    }
-
-    void draw_triangle(triangle t, int dim) {
-        auto data = convert_triangle(t);
-
         GLuint vertex_shader =
             compile_shader(get_source(VERTEX_PATH).c_str(), GL_VERTEX_SHADER);
 
         GLuint fragment_shader = compile_shader(
             get_source(FRAGMENT_PATH).c_str(), GL_FRAGMENT_SHADER);
 
-        GLuint shader_program =
-            create_shader_program(vertex_shader, fragment_shader);
+        shader_program = create_shader_program(vertex_shader, fragment_shader);
+
+        return EXIT_SUCCESS;
+    }
+
+    void draw_triangle(triangle t, int dim) {
+        auto data = convert_triangle(t);
+
+        glUseProgram(shader_program);
+        GL_CHECK();
 
         GLuint vao, vbo;
         glGenVertexArrays(1, &vao);
@@ -319,22 +323,23 @@ class engine_impl final : public engine {
                               (GLvoid*)0);
         glEnableVertexAttribArray(0);
 
-        GL_unbind();
-
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        GL_CHECK();
         glClear(GL_COLOR_BUFFER_BIT);
-        GL_CHECK();
 
-        glUseProgram(shader_program);    // test!
-        glBindVertexArray(vao);
+        GLfloat time = SDL_GetTicks() / 1000.f;
+        GLfloat red = (sin(time) / 2) + 0.5;
+        GLint vertexColorLocation =
+            glGetUniformLocation(shader_program, "our_color");
+        glUniform4f(vertexColorLocation, red, 0.2f, 0.0f, 1.0f);
+
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(0);
+        GL_unbind();
 
         glDeleteVertexArrays(1, &vao);
         glDeleteBuffers(1, &vbo);
 
         SDL_GL_SwapWindow(window);
+        GL_CHECK();
     }
 
     void CHL_exit() final {
