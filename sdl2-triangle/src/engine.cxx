@@ -100,7 +100,7 @@ std::ostream& operator<<(std::ostream& out, const SDL_version& v) {
     return out;
 }
 
-std::ostream& operator<<(std::ostream& out, const std::array<double, 9>& a) {
+std::ostream& operator<<(std::ostream& out, const std::array<float, 9>& a) {
     for (int i = 0; i < 9; i += 3) {
         out << a[i] << " " << a[i + 1] << std::endl;
     }
@@ -147,8 +147,8 @@ static bool check_input(const SDL_Event& e, const bind*& result) {
     return false;
 }
 
-static std::array<double, 9> convert_triangle(const triangle& t) {
-    std::array<double, 9> a;
+static std::array<float, 9> convert_triangle(const triangle& t) {
+    std::array<float, 9> a;
     for (int i = 0; i < 9; i += 3) {
         a[i] = t.vertices[i / 3].x;
         a[i + 1] = t.vertices[i / 3].y;
@@ -166,8 +166,54 @@ class engine_impl final : public engine {
    private:
     SDL_Window* window = nullptr;
 
+    void GL_unbind() {
+        glBindBuffer(GL_ARRAY_BUFFER, 0);    // test
+        glBindVertexArray(0);
+    }
+
+    GLuint compile_shader(const GLchar* source, GLenum target) {
+        GLuint shader = glCreateShader(target);
+        glShaderSource(shader, 1, &source, nullptr);
+        glCompileShader(shader);
+
+        std::ofstream f(std::string(source));
+        assert(!!f);
+
+        GLint success;
+        GLchar infoLog[512];
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+
+        if (!success) {
+            glGetShaderInfoLog(shader, 512, NULL, infoLog);
+            std::cerr << "Shader compilation failed:\n" << infoLog << std::endl;
+        }
+
+        return shader;
+    }
+
+    GLuint create_shader_program(GLuint vertex_shader, GLuint fragment_shader) {
+        GLuint shader_program = glCreateProgram();
+
+        glAttachShader(shader_program, vertex_shader);
+        glAttachShader(shader_program, fragment_shader);
+
+        glLinkProgram(shader_program);
+
+        GLchar infoLog[512];
+        GLint success;
+
+        glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
+
+        if (!success) {
+            glGetProgramInfoLog(shader_program, 512, nullptr, infoLog);
+            std::cerr << "Shader compilation failed:\n" << infoLog << std::endl;
+        }
+
+        return shader_program;
+    }
+
    public:
-    int CHL_init(int width, int height) {
+    int CHL_init(int width, int height) final {
         SDL_version compiled = {0, 0, 0};
         SDL_version linked = {0, 0, 0};
 
@@ -230,16 +276,51 @@ class engine_impl final : public engine {
         return EXIT_SUCCESS;
     }
 
-    void draw_triangle(triangle t) {
+    void draw_triangle(triangle t, int dim) {
         glClearColor(0.f, 1.0, 0.f, 1.0);
         GL_CHECK();
         glClear(GL_COLOR_BUFFER_BIT);
         GL_CHECK();
 
-        std::cout << convert_triangle(t);
-        GLuint vbo;
+        auto data = convert_triangle(t);
+        std::cout << data;
+
+        GLuint vao, vbo;
+        glGenVertexArrays(1, &vao);
+
+        //        GL_bind();
+        //        GL_unbind();
 
         glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]),
+                     data.data(), GL_STATIC_DRAW);
+
+        GLuint vertex_shader =
+            compile_shader("shaders\\simple_vertex.glsl", GL_VERTEX_SHADER);
+
+        GLuint fragment_shader =
+            compile_shader("shaders\\simple_fragment.glsl", GL_FRAGMENT_SHADER);
+
+        GLuint shader_program =
+            create_shader_program(vertex_shader, fragment_shader);
+
+        glDeleteShader(vertex_shader);
+        glDeleteShader(fragment_shader);
+
+        glVertexAttribPointer(0, dim, GL_FLOAT, GL_FALSE, dim * sizeof(GLfloat),
+                              (GLvoid*)0);
+        glEnableVertexAttribArray(0);
+
+        GL_unbind();
+
+        glUseProgram(shader_program);    // test!
+        glBindVertexArray(vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        GL_CHECK();
+        glBindVertexArray(0);
+
+        glDeleteVertexArrays(1, &vao);
         glDeleteBuffers(1, &vbo);
 
         SDL_GL_SwapWindow(window);

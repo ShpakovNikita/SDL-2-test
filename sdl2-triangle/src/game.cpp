@@ -41,7 +41,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         triangle t;
         fin >> t;
 
-        eng->draw_triangle(t);
+        eng->draw_triangle(t, 3);
     }
 
     eng->CHL_exit();
