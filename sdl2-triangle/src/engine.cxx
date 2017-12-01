@@ -23,6 +23,24 @@
 
 #include <windows.h>
 
+const GLchar* vertexShaderSource =
+    "#version 330 core\n"
+    "layout (location = 0) in vec3 position;\n"
+    "void main()\n"
+    "{\n"
+    "gl_Position = vec4(position.x, position.y, position.z, 1.0);\n"
+    "}\0";
+const GLchar* fragmentShaderSource =
+    "#version 330 core\n"
+    "out vec4 color;\n"
+    "void main()\n"
+    "{\n"
+    "color = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+    "}\n\0";
+
+const std::string FRAGMENT_PATH = "shaders\\simple_fragment.glsl";
+const std::string VERTEX_PATH = "shaders\\simple_vertex.glsl";
+
 #define GL_CHECK()                                                  \
     {                                                               \
         const int err = glGetError();                               \
@@ -159,7 +177,7 @@ static std::array<float, 9> convert_triangle(const triangle& t) {
     return a;
 }
 
-const char* get_source(const std::string& path) {    // static test!
+std::string get_source(const std::string& path) {    // static test!
     std::ifstream source(path);
     std::stringstream stream;
 
@@ -168,7 +186,8 @@ const char* get_source(const std::string& path) {    // static test!
     }
 
     stream << source.rdbuf();
-    return stream.str().c_str();
+
+    return stream.str();
 }
 
 engine::engine() {}
@@ -219,6 +238,9 @@ class engine_impl final : public engine {
             glGetProgramInfoLog(shader_program, 512, nullptr, infoLog);
             std::cerr << "Shader compilation failed:\n" << infoLog << std::endl;
         }
+
+        glDeleteShader(vertex_shader);
+        glDeleteShader(fragment_shader);
 
         return shader_program;
     }
@@ -281,43 +303,32 @@ class engine_impl final : public engine {
 
         // test
         glViewport(0, 0, width, height);
-        glEnable(GL_DEPTH_TEST);
         // test
 
         return EXIT_SUCCESS;
     }
 
     void draw_triangle(triangle t, int dim) {
-        glClearColor(0.f, 1.0, 0.f, 1.0);
-        GL_CHECK();
-        glClear(GL_COLOR_BUFFER_BIT);
-        GL_CHECK();
-
         auto data = convert_triangle(t);
-        std::cout << data;
 
-        GLuint vao, vbo;
-        glGenVertexArrays(1, &vao);
+        GLuint vertex_shader =
+            compile_shader(vertexShaderSource, GL_VERTEX_SHADER);
 
-        //        GL_bind();
-        //        GL_unbind();
-
-        glGenBuffers(1, &vbo);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]),
-                     data.data(), GL_STATIC_DRAW);
-
-        GLuint vertex_shader = compile_shader(
-            get_source("shaders\\simple_vertex.glsl"), GL_VERTEX_SHADER);
-
-        GLuint fragment_shader = compile_shader(
-            get_source("shaders\\simple_fragment.glsl"), GL_FRAGMENT_SHADER);
+        GLuint fragment_shader =
+            compile_shader(fragmentShaderSource, GL_FRAGMENT_SHADER);
 
         GLuint shader_program =
             create_shader_program(vertex_shader, fragment_shader);
 
-        glDeleteShader(vertex_shader);
-        glDeleteShader(fragment_shader);
+        GLuint vao, vbo;
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+
+        glBindVertexArray(vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]),
+                     data.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, dim, GL_FLOAT, GL_FALSE, dim * sizeof(GLfloat),
                               (GLvoid*)0);
@@ -325,10 +336,14 @@ class engine_impl final : public engine {
 
         GL_unbind();
 
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        GL_CHECK();
+        glClear(GL_COLOR_BUFFER_BIT);
+        GL_CHECK();
+
         glUseProgram(shader_program);    // test!
         glBindVertexArray(vao);
         glDrawArrays(GL_TRIANGLES, 0, 3);
-        GL_CHECK();
         glBindVertexArray(0);
 
         glDeleteVertexArrays(1, &vao);
