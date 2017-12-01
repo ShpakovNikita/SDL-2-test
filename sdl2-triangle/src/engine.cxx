@@ -18,6 +18,8 @@
 #include <assert.h>
 #include <algorithm>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 #include <windows.h>
 
@@ -157,6 +159,18 @@ static std::array<float, 9> convert_triangle(const triangle& t) {
     return a;
 }
 
+const char* get_source(const std::string& path) {    // static test!
+    std::ifstream source(path);
+    std::stringstream stream;
+
+    if (!source.is_open()) {
+        throw std::runtime_error("Could not open the file: " + path);
+    }
+
+    stream << source.rdbuf();
+    return stream.str().c_str();
+}
+
 engine::engine() {}
 engine::~engine() {
     SDL_Quit();
@@ -175,9 +189,6 @@ class engine_impl final : public engine {
         GLuint shader = glCreateShader(target);
         glShaderSource(shader, 1, &source, nullptr);
         glCompileShader(shader);
-
-        std::ofstream f(std::string(source));
-        assert(!!f);
 
         GLint success;
         GLchar infoLog[512];
@@ -296,11 +307,11 @@ class engine_impl final : public engine {
         glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]),
                      data.data(), GL_STATIC_DRAW);
 
-        GLuint vertex_shader =
-            compile_shader("shaders\\simple_vertex.glsl", GL_VERTEX_SHADER);
+        GLuint vertex_shader = compile_shader(
+            get_source("shaders\\simple_vertex.glsl"), GL_VERTEX_SHADER);
 
-        GLuint fragment_shader =
-            compile_shader("shaders\\simple_fragment.glsl", GL_FRAGMENT_SHADER);
+        GLuint fragment_shader = compile_shader(
+            get_source("shaders\\simple_fragment.glsl"), GL_FRAGMENT_SHADER);
 
         GLuint shader_program =
             create_shader_program(vertex_shader, fragment_shader);
