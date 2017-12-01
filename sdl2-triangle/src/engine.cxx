@@ -6,12 +6,46 @@
  */
 #include "headers/engine.hxx"
 
+#define GLEW_BUILD
+#include <GL/glew.h>
+#include <GL/glu.h>
+#include <GL/gl.h>
+
+#include <SDL2/SDL_main.h>
 #include <SDL2/SDL.h>
 
 #include <SDL2/SDL_opengl.h>
 #include <assert.h>
 #include <algorithm>
 #include <iostream>
+
+#include <windows.h>
+
+#define GL_CHECK()                                                  \
+    {                                                               \
+        const int err = glGetError();                               \
+        if (err != GL_NO_ERROR) {                                   \
+            switch (err) {                                          \
+                case GL_INVALID_ENUM:                               \
+                    std::cerr << GL_INVALID_ENUM << std::endl;      \
+                    break;                                          \
+                case GL_INVALID_VALUE:                              \
+                    std::cerr << GL_INVALID_VALUE << std::endl;     \
+                    break;                                          \
+                case GL_INVALID_OPERATION:                          \
+                    std::cerr << GL_INVALID_OPERATION << std::endl; \
+                    break;                                          \
+                case GL_INVALID_FRAMEBUFFER_OPERATION:              \
+                    std::cerr << GL_INVALID_FRAMEBUFFER_OPERATION   \
+                              << std::endl;                         \
+                    break;                                          \
+                case GL_OUT_OF_MEMORY:                              \
+                    std::cerr << GL_OUT_OF_MEMORY << std::endl;     \
+                    break;                                          \
+            }                                                       \
+            assert(false);                                          \
+        }                                                           \
+    }
 
 namespace CHL {
 struct bind {
@@ -66,6 +100,24 @@ std::ostream& operator<<(std::ostream& out, const SDL_version& v) {
     return out;
 }
 
+std::ostream& operator<<(std::ostream& out, const std::array<double, 9>& a) {
+    for (int i = 0; i < 9; i += 3) {
+        out << a[i] << " " << a[i + 1] << std::endl;
+    }
+
+    out.flush();
+    return out;
+}
+
+std::ostream& operator<<(std::ostream& out, triangle& a) {
+    for (int i = 0; i < 3; i++) {
+        out << a.vertices[i].x << " " << a.vertices[i].y << std::endl;
+    }
+
+    out.flush();
+    return out;
+}
+
 std::ostream& operator<<(std::ostream& stream, const event e) {
     std::uint32_t value = static_cast<std::uint32_t>(e);
     std::uint32_t minimal = static_cast<std::uint32_t>(event::left_pressed);
@@ -93,6 +145,16 @@ static bool check_input(const SDL_Event& e, const bind*& result) {
         return true;
     }
     return false;
+}
+
+static std::array<double, 9> convert_triangle(const triangle& t) {
+    std::array<double, 9> a;
+    for (int i = 0; i < 9; i += 3) {
+        a[i] = t.vertices[i / 3].x;
+        a[i + 1] = t.vertices[i / 3].y;
+        a[i + 2] = 0.f;
+    }
+    return a;
 }
 
 engine::engine() {}
@@ -141,6 +203,14 @@ class engine_impl final : public engine {
         SDL_GLContext gl_context = SDL_GL_CreateContext(window);
         assert(gl_context != nullptr);
 
+        GLenum glew_init = glewInit();
+        if (glew_init != GLEW_OK) {
+            std::cerr << "glewInit error " << glew_init << std::endl;
+            SDL_Quit();
+
+            return EXIT_FAILURE;
+        }
+
         int gl_major_ver = 0;
         int res =
             SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &gl_major_ver);
@@ -152,12 +222,25 @@ class engine_impl final : public engine {
 
         std::cerr << "Gl:" << gl_major_ver << '.' << gl_minor_ver << std::endl;
 
+        // test
+        glViewport(0, 0, width, height);
+        glEnable(GL_DEPTH_TEST);
+        // test
+
         return EXIT_SUCCESS;
     }
 
     void draw_triangle(triangle t) {
         glClearColor(0.f, 1.0, 0.f, 1.0);
+        GL_CHECK();
         glClear(GL_COLOR_BUFFER_BIT);
+        GL_CHECK();
+
+        std::cout << convert_triangle(t);
+        GLuint vbo;
+
+        glGenBuffers(1, &vbo);
+        glDeleteBuffers(1, &vbo);
 
         SDL_GL_SwapWindow(window);
     }

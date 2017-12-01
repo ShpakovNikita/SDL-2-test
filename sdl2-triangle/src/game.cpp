@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <array>
+#include <cassert>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -35,6 +36,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         std::ifstream fin(VERTEX_FILE);
+        assert(!!fin);
+
         triangle t;
         fin >> t;
 

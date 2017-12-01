@@ -51,6 +51,8 @@ struct triangle {
     std::array<vertex_2d, 3> vertices;
 };
 
+static std::array<double, 9> convert_triangle(const triangle&);
+
 std::istream& operator>>(std::istream& in, vertex_2d& v);
 std::istream& operator>>(std::istream& in, triangle& t);
 
