@@ -8,6 +8,8 @@
 #ifndef HEADERS_ENGINE_HXX_
 #define HEADERS_ENGINE_HXX_
 
+#define ARRAY_SIZE 9
+
 #include <array>
 #include <string>
 
@@ -51,10 +53,12 @@ struct triangle {
     std::array<vertex_2d, 3> vertices;
 };
 
-static std::array<float, 9> convert_triangle(const triangle&);
+static std::array<float, ARRAY_SIZE> convert_triangle(const triangle&);
 
 std::istream& operator>>(std::istream& in, vertex_2d& v);
 std::istream& operator>>(std::istream& in, triangle& t);
+
+triangle blend(const triangle&, const triangle&, const float);
 
 class engine;
 
@@ -65,6 +69,11 @@ class engine {
    public:
     engine();
     virtual ~engine();
+
+    //sdl package
+    virtual void GL_clear_color() = 0;
+    virtual void GL_swap_buffers() = 0;
+    virtual float GL_time() = 0;
 
     virtual int CHL_init(int, int) = 0;
     virtual bool read_input(event&) = 0;

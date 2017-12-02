@@ -54,6 +54,21 @@ const std::string VERTEX_PATH = "shaders\\simple_vertex.glsl";
     }
 
 namespace CHL {
+vertex_2d blend_vertex(const vertex_2d& r, const vertex_2d& l, const float a) {
+    vertex_2d v;
+    v.x = r.x * (1. - a) + l.x * a;
+    v.y = r.y * (1. - a) + l.y * a;
+    return v;
+}
+
+triangle blend(const triangle& t1, const triangle& t2, const float a) {
+    triangle res;
+    res.vertices[0] = blend_vertex(t1.vertices[0], t2.vertices[0], a);
+    res.vertices[1] = blend_vertex(t1.vertices[1], t2.vertices[1], a);
+    res.vertices[2] = blend_vertex(t1.vertices[2], t2.vertices[2], a);
+    return res;
+}
+
 struct bind {
     bind(SDL_Keycode k, std::string n, event pressed, event released)
         : key(k), name(n), event_pressed(pressed), event_released(released) {}
@@ -153,8 +168,8 @@ static bool check_input(const SDL_Event& e, const bind*& result) {
     return false;
 }
 
-static std::array<float, 9> convert_triangle(const triangle& t) {
-    std::array<float, 9> a;
+static std::array<float, ARRAY_SIZE> convert_triangle(const triangle& t) {
+    std::array<float, ARRAY_SIZE> a;
     for (int i = 0; i < 9; i += 3) {
         a[i] = t.vertices[i / 3].x;
         a[i + 1] = t.vertices[i / 3].y;
@@ -185,6 +200,8 @@ class engine_impl final : public engine {
    private:
     SDL_Window* window = nullptr;
     GLuint shader_program;
+
+    GLuint vao, vbo;
 
     void GL_unbind() {
         glBindBuffer(GL_ARRAY_BUFFER, 0);    // test
@@ -303,13 +320,20 @@ class engine_impl final : public engine {
         return EXIT_SUCCESS;
     }
 
+    void GL_swap_buffers() final { SDL_GL_SwapWindow(window); }
+    void GL_clear_color() final {
+        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+    }
+
+    float GL_time() final { return SDL_GetTicks() / 1000.f; }
+
     void draw_triangle(triangle t, int dim) {
         auto data = convert_triangle(t);
 
         glUseProgram(shader_program);
         GL_CHECK();
 
-        GLuint vao, vbo;
         glGenVertexArrays(1, &vao);
         glGenBuffers(1, &vbo);
 
@@ -323,9 +347,6 @@ class engine_impl final : public engine {
                               (GLvoid*)0);
         glEnableVertexAttribArray(0);
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
         GLfloat time = SDL_GetTicks() / 1000.f;
         GLfloat red = (sin(time) / 2) + 0.5;
         GLint vertexColorLocation =
@@ -333,12 +354,12 @@ class engine_impl final : public engine {
         glUniform4f(vertexColorLocation, red, 0.2f, 0.0f, 1.0f);
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
+
         GL_unbind();
 
         glDeleteVertexArrays(1, &vao);
         glDeleteBuffers(1, &vbo);
 
-        SDL_GL_SwapWindow(window);
         GL_CHECK();
     }
 

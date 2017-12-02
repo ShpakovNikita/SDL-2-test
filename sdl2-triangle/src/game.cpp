@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <math.h>
 
 #include "headers/engine.hxx"
 
@@ -35,13 +36,22 @@ int main(int /*argc*/, char* /*argv*/ []) {
             }
         }
 
+        eng->GL_clear_color();
+
         std::ifstream fin(VERTEX_FILE);
         assert(!!fin);
 
-        triangle t;
-        fin >> t;
+        float alpha = sin(eng->GL_time()) / 2. + 0.5f;
+        triangle t1q, t2q, t1r, t2r;
+        fin >> t1q >> t2q >> t1r >> t2r;
 
-        eng->draw_triangle(t, 3);
+        // draw events
+        triangle tr1 = blend(t1q, t1r, alpha);
+        triangle tr2 = blend(t2q, t2r, alpha);
+        eng->draw_triangle(tr1, 3);
+        eng->draw_triangle(tr2, 3);
+
+        eng->GL_swap_buffers();
     }
 
     eng->CHL_exit();
