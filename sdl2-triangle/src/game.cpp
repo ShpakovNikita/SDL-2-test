@@ -45,6 +45,16 @@ int main(int /*argc*/, char* /*argv*/ []) {
         switch (current_mode) {
             case mode::idle: {
                 eng->GL_clear_color();
+
+                std::ifstream fin(VERTEX_FILE);
+                assert(!!fin);
+
+                triangle tr1, tr2;
+                fin >> tr1 >> tr2;
+
+                eng->draw_triangle(tr1, 3);
+                eng->draw_triangle(tr2, 3);
+
                 eng->GL_swap_buffers();
             } break;
             case mode::draw: {

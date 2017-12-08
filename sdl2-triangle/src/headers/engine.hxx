@@ -38,9 +38,10 @@ enum class event {
 };
 
 struct vertex_2d {
-    vertex_2d() : x(0.f), y(0.f) {}
+    vertex_2d() : x(0.f), y(0.f), x_t(0.f), y_t(0.f) {}
 
     float x, y;
+    float x_t, y_t;
 };
 
 struct triangle {

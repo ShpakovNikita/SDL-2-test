@@ -105,6 +105,8 @@ const std::array<bind, 8> bindings{
 std::istream& operator>>(std::istream& in, vertex_2d& v) {
     in >> v.x;
     in >> v.y;
+    in >> v.x_t;
+    in >> v.y_t;
     return in;
 }
 
@@ -242,16 +244,19 @@ class engine_impl final : public engine {
         glBindTexture(GL_TEXTURE_2D, tex_handl);
         GL_CHECK();
 
-        GLint mipmap_level = 0;
+        GLint mipmap_level = 0;    // test
         GLint border = 0;
         glTexImage2D(GL_TEXTURE_2D, mipmap_level, GL_RGBA, w, h, border,
                      GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
+        GL_CHECK();
+        glGenerateMipmap(GL_TEXTURE_2D);
         GL_CHECK();
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         GL_CHECK();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         GL_CHECK();
+
         return true;
     }
 
@@ -373,6 +378,7 @@ class engine_impl final : public engine {
         if (!load_texture("test_image.png")) {
             return EXIT_FAILURE;
         }
+        std::cerr << "texture loaded" << std::endl;
 
         return EXIT_SUCCESS;
     }
