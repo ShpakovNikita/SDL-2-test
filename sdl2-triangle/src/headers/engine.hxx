@@ -8,7 +8,8 @@
 #ifndef HEADERS_ENGINE_HXX_
 #define HEADERS_ENGINE_HXX_
 
-#define ARRAY_SIZE 9
+#define ARRAY_SIZE 15
+#define STRIDE_ELEMENTS 5
 
 #include <array>
 #include <string>
@@ -79,7 +80,7 @@ class engine {
     virtual int CHL_init(int, int) = 0;
     virtual bool read_input(event&) = 0;
     virtual void CHL_exit() = 0;
-    virtual void draw_triangle(triangle, int) = 0;
+    virtual void draw_triangle(triangle) = 0;
     virtual bool load_texture(std::string) = 0;
 };
 

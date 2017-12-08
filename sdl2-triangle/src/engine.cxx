@@ -59,6 +59,8 @@ vertex_2d blend_vertex(const vertex_2d& r, const vertex_2d& l, const float a) {
     vertex_2d v;
     v.x = r.x * (1. - a) + l.x * a;
     v.y = r.y * (1. - a) + l.y * a;
+    v.x_t = r.x_t * (1. - a) + l.x_t * a;
+    v.y_t = r.y_t * (1. - a) + l.y_t * a;
     return v;
 }
 
@@ -173,10 +175,13 @@ static bool check_input(const SDL_Event& e, const bind*& result) {
 
 static std::array<float, ARRAY_SIZE> convert_triangle(const triangle& t) {
     std::array<float, ARRAY_SIZE> a;
-    for (int i = 0; i < 9; i += 3) {
-        a[i] = t.vertices[i / 3].x;
-        a[i + 1] = t.vertices[i / 3].y;
+    for (int i = 0; i < ARRAY_SIZE; i += STRIDE_ELEMENTS) {
+        a[i] = t.vertices[i / STRIDE_ELEMENTS].x;
+        a[i + 1] = t.vertices[i / STRIDE_ELEMENTS].y;
         a[i + 2] = 0.f;
+
+        a[i + 3] = t.vertices[i / STRIDE_ELEMENTS].x_t;
+        a[i + 4] = t.vertices[i / STRIDE_ELEMENTS].y_t;
     }
     return a;
 }
@@ -252,10 +257,14 @@ class engine_impl final : public engine {
         glGenerateMipmap(GL_TEXTURE_2D);
         GL_CHECK();
 
+        float borderColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
+        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        // Set texture filtering
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        GL_CHECK();
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        GL_CHECK();
 
         return true;
     }
@@ -378,6 +387,9 @@ class engine_impl final : public engine {
         if (!load_texture("test_image.png")) {
             return EXIT_FAILURE;
         }
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         std::cerr << "texture loaded" << std::endl;
 
         return EXIT_SUCCESS;
@@ -391,7 +403,7 @@ class engine_impl final : public engine {
 
     float GL_time() final { return SDL_GetTicks() / 1000.f; }
 
-    void draw_triangle(triangle t, int dim) {
+    void draw_triangle(triangle t) {
         auto data = convert_triangle(t);
 
         glGenVertexArrays(1, &vao);
@@ -403,9 +415,14 @@ class engine_impl final : public engine {
         glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]),
                      data.data(), GL_STATIC_DRAW);
 
-        glVertexAttribPointer(0, dim, GL_FLOAT, GL_FALSE, dim * sizeof(GLfloat),
-                              (GLvoid*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+                              STRIDE_ELEMENTS * sizeof(GLfloat), (GLvoid*)0);
         glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
+                              STRIDE_ELEMENTS * sizeof(GLfloat),
+                              (GLvoid*)(3 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(1);
 
         GLfloat time = SDL_GetTicks() / 1000.f;
         GLfloat red = (sin(time) / 2) + 0.5;

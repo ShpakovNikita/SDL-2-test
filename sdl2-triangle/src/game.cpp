@@ -12,9 +12,10 @@
 enum class mode { draw, look, idle };
 
 const std::string VERTEX_FILE = "vertices.txt";
+const std::string SIN_FILE = "sin.txt";
 
-constexpr int WINDOW_WIDTH = 640;
-constexpr int WINDOW_HEIGHT = 480;
+constexpr int WINDOW_WIDTH = 1024;
+constexpr int WINDOW_HEIGHT = 1024;
 
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
@@ -37,6 +38,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 case event::select_pressed:
                     current_mode = mode::draw;
                     break;
+                case event::start_pressed:
+                    current_mode = mode::look;
+                    break;
+                case event::button1_pressed:
+                    current_mode = mode::idle;
+                    break;
                 default:
                     break;
             }
@@ -52,8 +59,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 triangle tr1, tr2;
                 fin >> tr1 >> tr2;
 
-                eng->draw_triangle(tr1, 3);
-                eng->draw_triangle(tr2, 3);
+                eng->draw_triangle(tr1);
+                eng->draw_triangle(tr2);
 
                 eng->GL_swap_buffers();
             } break;
@@ -70,8 +77,35 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 // draw events
                 triangle tr1 = blend(t1q, t1r, alpha);
                 triangle tr2 = blend(t2q, t2r, alpha);
-                eng->draw_triangle(tr1, 3);
-                eng->draw_triangle(tr2, 3);
+                eng->draw_triangle(tr1);
+                eng->draw_triangle(tr2);
+
+                eng->GL_swap_buffers();
+            } break;
+            case mode::look: {
+                eng->GL_clear_color();
+
+                std::ifstream fin(SIN_FILE);
+                assert(!!fin);
+
+                triangle tr1, tr2;
+                fin >> tr1 >> tr2;
+
+                float h = sin(eng->GL_time()) * 0.3f;
+                float w = cos(eng->GL_time()) * 0.3f;
+
+                for (auto& v : tr1.vertices) {
+                    v.x_t += w;
+                    v.y_t += h;
+                }
+
+                for (auto& v : tr2.vertices) {
+                    v.x_t += w;
+                    v.y_t += h;
+                }
+
+                eng->draw_triangle(tr1);
+                eng->draw_triangle(tr2);
 
                 eng->GL_swap_buffers();
             } break;
