@@ -70,7 +70,7 @@ class engine {
     engine();
     virtual ~engine();
 
-    //sdl package
+    // sdl package
     virtual void GL_clear_color() = 0;
     virtual void GL_swap_buffers() = 0;
     virtual float GL_time() = 0;
@@ -79,6 +79,7 @@ class engine {
     virtual bool read_input(event&) = 0;
     virtual void CHL_exit() = 0;
     virtual void draw_triangle(triangle, int) = 0;
+    virtual bool load_texture(std::string) = 0;
 };
 
 std::ostream& operator<<(std::ostream& stream, const event e);

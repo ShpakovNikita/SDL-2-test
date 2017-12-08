@@ -5,6 +5,7 @@
  *      Author: Shaft
  */
 #include "headers/engine.hxx"
+#include "headers/picopng.hxx"
 
 #define GLEW_BUILD
 #include <GL/glew.h>
@@ -203,6 +204,57 @@ class engine_impl final : public engine {
 
     GLuint vao, vbo;
 
+    bool load_texture(std::string path) final {
+        std::vector<unsigned char> png_file_in_memory;
+        std::ifstream ifs(path.data(), std::ios_base::binary);
+        if (!ifs) {
+            return false;
+        }
+        ifs.seekg(0, std::ios_base::end);
+        size_t pos_in_file = ifs.tellg();
+        png_file_in_memory.resize(pos_in_file);
+        ifs.seekg(0, std::ios_base::beg);
+        if (!ifs) {
+            return false;
+        }
+
+        ifs.read(reinterpret_cast<char*>(png_file_in_memory.data()),
+                 pos_in_file);
+        if (!ifs.good()) {
+            return false;
+        }
+
+        std::vector<unsigned char> image;
+        unsigned long w = 0;
+        unsigned long h = 0;
+        int error = decodePNG(image, w, h, &png_file_in_memory[0],
+                              png_file_in_memory.size(), false);
+
+        // if there's an error, display it
+        if (error != 0) {
+            std::cerr << "error: " << error << std::endl;
+            return false;
+        }
+
+        GLuint tex_handl = 0;
+        glGenTextures(1, &tex_handl);
+        GL_CHECK();
+        glBindTexture(GL_TEXTURE_2D, tex_handl);
+        GL_CHECK();
+
+        GLint mipmap_level = 0;
+        GLint border = 0;
+        glTexImage2D(GL_TEXTURE_2D, mipmap_level, GL_RGBA, w, h, border,
+                     GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
+        GL_CHECK();
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        GL_CHECK();
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        GL_CHECK();
+        return true;
+    }
+
     void GL_unbind() {
         glBindBuffer(GL_ARRAY_BUFFER, 0);    // test
         glBindVertexArray(0);
@@ -316,6 +368,11 @@ class engine_impl final : public engine {
             get_source(FRAGMENT_PATH).c_str(), GL_FRAGMENT_SHADER);
 
         shader_program = create_shader_program(vertex_shader, fragment_shader);
+        glUseProgram(shader_program);
+
+        if (!load_texture("test_image.png")) {
+            return EXIT_FAILURE;
+        }
 
         return EXIT_SUCCESS;
     }
@@ -330,9 +387,6 @@ class engine_impl final : public engine {
 
     void draw_triangle(triangle t, int dim) {
         auto data = convert_triangle(t);
-
-        glUseProgram(shader_program);
-        GL_CHECK();
 
         glGenVertexArrays(1, &vao);
         glGenBuffers(1, &vbo);

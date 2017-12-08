@@ -9,6 +9,8 @@
 
 #include "headers/engine.hxx"
 
+enum class mode { draw, look, idle };
+
 const std::string VERTEX_FILE = "vertices.txt";
 
 constexpr int WINDOW_WIDTH = 640;
@@ -20,6 +22,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                                                    destroy_engine);
 
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT);
+    mode current_mode = mode::idle;
 
     bool quit = false;
     while (!quit) {
@@ -31,27 +34,40 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 case event::turn_off:
                     quit = true;
                     break;
+                case event::select_pressed:
+                    current_mode = mode::draw;
+                    break;
                 default:
                     break;
             }
         }
 
-        eng->GL_clear_color();
+        switch (current_mode) {
+            case mode::idle: {
+                eng->GL_clear_color();
+                eng->GL_swap_buffers();
+            } break;
+            case mode::draw: {
+                eng->GL_clear_color();
 
-        std::ifstream fin(VERTEX_FILE);
-        assert(!!fin);
+                std::ifstream fin(VERTEX_FILE);
+                assert(!!fin);
 
-        float alpha = sin(eng->GL_time()) / 2. + 0.5f;
-        triangle t1q, t2q, t1r, t2r;
-        fin >> t1q >> t2q >> t1r >> t2r;
+                float alpha = sin(eng->GL_time()) / 2. + 0.5f;
+                triangle t1q, t2q, t1r, t2r;
+                fin >> t1q >> t2q >> t1r >> t2r;
 
-        // draw events
-        triangle tr1 = blend(t1q, t1r, alpha);
-        triangle tr2 = blend(t2q, t2r, alpha);
-        eng->draw_triangle(tr1, 3);
-        eng->draw_triangle(tr2, 3);
+                // draw events
+                triangle tr1 = blend(t1q, t1r, alpha);
+                triangle tr2 = blend(t2q, t2r, alpha);
+                eng->draw_triangle(tr1, 3);
+                eng->draw_triangle(tr2, 3);
 
-        eng->GL_swap_buffers();
+                eng->GL_swap_buffers();
+            } break;
+            default:
+                break;
+        }
     }
 
     eng->CHL_exit();
