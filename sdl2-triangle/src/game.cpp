@@ -91,8 +91,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 triangle tr1, tr2;
                 fin >> tr1 >> tr2;
 
-                float h = sin(eng->GL_time()) * 0.3f;
-                float w = cos(eng->GL_time()) * 0.3f;
+                float h = sin(eng->GL_time()) * 0.4f - 0.6f;
+                float w = cos(eng->GL_time()) * 0.4f - 0.6f;
 
                 for (auto& v : tr1.vertices) {
                     v.x_t += w;

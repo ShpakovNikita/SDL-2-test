@@ -254,11 +254,14 @@ class engine_impl final : public engine {
         glTexImage2D(GL_TEXTURE_2D, mipmap_level, GL_RGBA, w, h, border,
                      GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
         GL_CHECK();
-        glGenerateMipmap(GL_TEXTURE_2D);
-        GL_CHECK();
 
-        float borderColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
-        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+        glUniform1i(glGetUniformLocation(shader_program, "our_texture"), 0);
+        //        glGenerateMipmap(GL_TEXTURE_2D);
+        //        GL_CHECK();
+
+        //        float borderColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
+        //        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR,
+        //        borderColor);
 
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
