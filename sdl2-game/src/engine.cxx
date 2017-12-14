@@ -448,7 +448,6 @@ class engine_impl final : public engine {
                            glm::value_ptr(transform));
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
-
         GL_unbind();
 
         glDeleteVertexArrays(1, &vao);
