@@ -22,6 +22,7 @@
 #include <fstream>
 #include <math.h>
 #include <sstream>
+#include <array>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -59,6 +60,23 @@ const std::string VERTEX_PATH = "shaders\\simple_vertex.glsl";
     }
 
 namespace CHL {
+vertex_2d operator+(vertex_2d& vl, vertex_2d& vr) {
+    vertex_2d v;
+    v.x = vl.x + vr.x;
+    v.y = vl.y + vr.y;
+    v.x_t = vl.x_t + vr.x_t;
+    v.y_t = vl.y_t + vr.y_t;
+    return v;
+}
+
+triangle operator+(triangle& tl, triangle& tr) {
+    triangle t;
+    t.vertices[0] = tl.vertices[0] + tr.vertices[0];
+    t.vertices[1] = tl.vertices[1] + tr.vertices[1];
+    t.vertices[2] = tl.vertices[2] + tr.vertices[2];
+    return t;
+}
+
 vertex_2d blend_vertex(const vertex_2d& r, const vertex_2d& l, const float a) {
     vertex_2d v;
     v.x = r.x * (1. - a) + l.x * a;
@@ -177,15 +195,15 @@ static bool check_input(const SDL_Event& e, const bind*& result) {
     return false;
 }
 
-static std::array<float, ARRAY_SIZE> convert_triangle(const triangle& t) {
-    std::array<float, ARRAY_SIZE> a;
-    for (int i = 0; i < ARRAY_SIZE; i += STRIDE_ELEMENTS) {
-        a[i] = t.vertices[i / STRIDE_ELEMENTS].x;
-        a[i + 1] = t.vertices[i / STRIDE_ELEMENTS].y;
-        a[i + 2] = 0.f;
-
-        a[i + 3] = t.vertices[i / STRIDE_ELEMENTS].x_t;
-        a[i + 4] = t.vertices[i / STRIDE_ELEMENTS].y_t;
+std::vector<float> convert_triangle(const triangle& t) {
+    std::vector<float> a;
+    a.reserve(15);
+    for (auto v : t.vertices) {
+        a.insert(a.end(), v.x);
+        a.insert(a.end(), v.y);
+        a.insert(a.end(), 0.f);
+        a.insert(a.end(), v.x_t);
+        a.insert(a.end(), v.y_t);
     }
     return a;
 }
@@ -210,8 +228,12 @@ engine::~engine() {
 
 class engine_impl final : public engine {
    private:
+    event_type e_type = event_type::other;
     SDL_Window* window = nullptr;
     GLuint shader_program;
+
+    int w_h;
+    int w_w;
 
     GLuint vao, vbo;
 
@@ -348,6 +370,9 @@ class engine_impl final : public engine {
                                   SDL_WINDOWPOS_CENTERED, width, height,
                                   SDL_WINDOW_OPENGL);
 
+        w_h = height;
+        w_w = width;
+
         if (window == nullptr) {
             const char* err_message = SDL_GetError();
             std::cerr << "error: failed call SDL_Init: " << err_message
@@ -410,6 +435,8 @@ class engine_impl final : public engine {
 
     float GL_time() final { return SDL_GetTicks() / 1000.f; }
 
+    event_type get_event_type() final { return e_type; }
+
     void draw_triangle(triangle t) {
         auto data = convert_triangle(t);
 
@@ -437,11 +464,15 @@ class engine_impl final : public engine {
         //            glGetUniformLocation(shader_program, "our_color");
         //        glUniform4f(vertexColorLocation, red, 0.2f, 0.0f, 1.0f);
 
+        float k = (float)w_w / w_h, scale = 0.5f;
         glm::mat4 transform;
-        transform = glm::rotate(
-            transform,
-            /*(GLfloat)GL_time() * */ glm::radians((float)GL_time() * 50.f),
-            glm::vec3(0.0f, 0.0f, 1.0f));
+        //        transform = glm::rotate(
+        //            transform,
+        //            /*(GLfloat)GL_time() * */ glm::radians((float)GL_time()
+        //            * 50.f), glm::vec3(0.0f, 0.0f, 1.0f));
+
+        transform =
+            glm::scale(transform, glm::vec3(1.0f * scale, k * scale, 1.0f));
 
         GLint transformLoc = glGetUniformLocation(shader_program, "transform");
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE,
@@ -464,6 +495,7 @@ class engine_impl final : public engine {
 
     bool read_input(event& e) final {
         SDL_Event event;
+        e_type = event_type::other;
 
         if (SDL_PollEvent(&event)) {
             const bind* binding = nullptr;
@@ -475,12 +507,14 @@ class engine_impl final : public engine {
                 case SDL_KEYDOWN:
                     if (check_input(event, binding)) {
                         e = binding->event_pressed;
+                        e_type = event_type::pressed;
                         return true;
                     }
                     break;
                 case SDL_KEYUP:
                     if (check_input(event, binding)) {
                         e = binding->event_released;
+                        e_type = event_type::released;
                         return true;
                     }
                     break;

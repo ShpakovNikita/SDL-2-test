@@ -8,10 +8,9 @@
 #ifndef HEADERS_ENGINE_HXX_
 #define HEADERS_ENGINE_HXX_
 
-#define ARRAY_SIZE 15
 #define STRIDE_ELEMENTS 5
 
-#include <array>
+#include <vector>
 #include <string>
 
 namespace CHL    // chlorine-5
@@ -40,6 +39,8 @@ enum class event {
 
 struct vertex_2d {
     vertex_2d() : x(0.f), y(0.f), x_t(0.f), y_t(0.f) {}
+    vertex_2d(float _x, float _y, float _x_t, float _y_t)
+        : x(_x), y(_y), x_t(_x_t), y_t(_y_t) {}
 
     float x, y;
     float x_t, y_t;
@@ -47,18 +48,25 @@ struct vertex_2d {
 
 struct triangle {
     triangle() {
-        vertices[0] = vertex_2d();
-        vertices[1] = vertex_2d();
-        vertices[2] = vertex_2d();
+        vertices.insert(vertices.end(), vertex_2d());
+        vertices.insert(vertices.end(), vertex_2d());
+        vertices.insert(vertices.end(), vertex_2d());
     }
 
-    std::array<vertex_2d, 3> vertices;
+    triangle(vertex_2d v1, vertex_2d v2, vertex_2d v3) {
+        vertices.insert(vertices.end(), v1);
+        vertices.insert(vertices.end(), v2);
+        vertices.insert(vertices.end(), v3);
+    }
+
+    std::vector<vertex_2d> vertices;
 };
 
-static std::array<float, ARRAY_SIZE> convert_triangle(const triangle&);
+std::vector<float> convert_triangle(const triangle&);
 
 std::istream& operator>>(std::istream& in, vertex_2d& v);
 std::istream& operator>>(std::istream& in, triangle& t);
+triangle operator+(triangle& tl, triangle& tr);
 
 triangle blend(const triangle&, const triangle&, const float);
 
@@ -66,6 +74,8 @@ class engine;
 
 engine* create_engine();
 void destroy_engine(engine* e);
+
+enum class event_type { pressed, released, other };
 
 class engine {
    public:
@@ -82,6 +92,7 @@ class engine {
     virtual void CHL_exit() = 0;
     virtual void draw_triangle(triangle) = 0;
     virtual bool load_texture(std::string) = 0;
+    virtual event_type get_event_type() = 0;
 };
 
 std::ostream& operator<<(std::ostream& stream, const event e);
