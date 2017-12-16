@@ -8,7 +8,6 @@
 #include <math.h>
 
 #include "headers/engine.hxx"
-#include "headers/instance.hxx"
 
 enum class mode { draw, look, idle };
 
@@ -23,17 +22,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::unique_ptr<engine, void (*)(engine*)> eng(create_engine(),
                                                    destroy_engine);
 
-    std::unique_ptr<inst::instance, void (*)(inst::instance*)> player(
-        inst::create_player(std::vector<float>(), eng), inst::destroy_player);
+    std::unique_ptr<instance, void (*)(instance*)> player(
+        create_player(std::vector<float>(), 0.0f, 0.0f, 0.0f), destroy_player);
 
     std::ifstream fin(VERTEX_FILE);
     assert(!!fin);
 
-    triangle move_tr1, move_tr2;
-    fin >> move_tr1 >> move_tr2;
-
-    auto data = convert_triangle(move_tr1);
-    std::cout << data.size() << std::endl;
+    triangle t_arr[2];
+    fin >> t_arr[0] >> t_arr[1];
 
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT);
     mode current_mode = mode::idle;
@@ -43,6 +39,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
     bool keys[17];
     for (int i = 0; i < 17; i++)
         keys[i] = false;
+
+    std::vector<float> data;
 
     int speed = 1;
     float prev_frame = eng->GL_time();
@@ -71,7 +69,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     break;
             }
 
-            e == event::left_pressed;
             if (eng->get_event_type() == event_type::pressed)
                 keys[static_cast<int>(e)] = true;
 
@@ -84,9 +81,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
         if (keys[static_cast<int>(event::right_pressed)])
             posX += speed * delta_time;
         if (keys[static_cast<int>(event::up_pressed)])
-            posY += speed * delta_time;
-        if (keys[static_cast<int>(event::down_pressed)])
             posY -= speed * delta_time;
+        if (keys[static_cast<int>(event::down_pressed)])
+            posY += speed * delta_time;
 
         switch (current_mode) {
             case mode::idle: {
@@ -96,8 +93,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
                                vertex_2d(posX, posY, 0.0f, 0.0f),
                                vertex_2d(posX, posY, 0.0f, 0.0f));
 
-                eng->draw_triangle(move_tr1 + add_t);
-                eng->draw_triangle(move_tr2 + add_t);
+                for (auto t : t_arr)
+                    convert_triangle(t + add_t, data);
+
+                eng->draw(data);
+
+                data.clear();
 
                 eng->GL_swap_buffers();
             } break;
@@ -114,8 +115,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 // draw events
                 triangle tr1 = blend(t1q, t1r, alpha);
                 triangle tr2 = blend(t2q, t2r, alpha);
-                eng->draw_triangle(tr1);
-                eng->draw_triangle(tr2);
+                std::vector<float> d;
+                convert_triangle(tr1, d);
+                convert_triangle(tr2, d);
+
+                eng->draw(d);
 
                 eng->GL_swap_buffers();
             } break;
@@ -141,8 +145,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     v.y_t += h;
                 }
 
-                eng->draw_triangle(tr1);
-                eng->draw_triangle(tr2);
+                std::vector<float> d;
+                convert_triangle(tr1, d);
+                convert_triangle(tr2, d);
+
+                eng->draw(d);
 
                 eng->GL_swap_buffers();
             } break;

@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <string>
+#include <memory>
 
 namespace CHL    // chlorine-5
 {
@@ -38,11 +39,11 @@ enum class event {
 };
 
 struct vertex_2d {
-    vertex_2d() : x(0.f), y(0.f), x_t(0.f), y_t(0.f) {}
+    vertex_2d() : x(0.f), y(0.f), z_index(0.f), x_t(0.f), y_t(0.f) {}
     vertex_2d(float _x, float _y, float _x_t, float _y_t)
-        : x(_x), y(_y), x_t(_x_t), y_t(_y_t) {}
+        : x(_x), y(_y), z_index(0.f), x_t(_x_t), y_t(_y_t) {}
 
-    float x, y;
+    float x, y, z_index;
     float x_t, y_t;
 };
 
@@ -62,7 +63,7 @@ struct triangle {
     std::vector<vertex_2d> vertices;
 };
 
-std::vector<float> convert_triangle(const triangle&);
+void convert_triangle(const triangle&, std::vector<float>&);
 
 std::istream& operator>>(std::istream& in, vertex_2d& v);
 std::istream& operator>>(std::istream& in, triangle& t);
@@ -77,6 +78,21 @@ void destroy_engine(engine* e);
 
 enum class event_type { pressed, released, other };
 
+class instance {
+   public:
+    virtual int render_instance() = 0;
+    instance(std::vector<float>, float x, float y, float z);
+    virtual ~instance();
+
+    vertex_2d position;
+
+   private:
+    std::vector<float> data;
+};
+
+instance* create_player(std::vector<float>, float x, float y, float z);
+void destroy_player(instance*);
+
 class engine {
    public:
     engine();
@@ -90,7 +106,7 @@ class engine {
     virtual int CHL_init(int, int) = 0;
     virtual bool read_input(event&) = 0;
     virtual void CHL_exit() = 0;
-    virtual void draw_triangle(triangle) = 0;
+    virtual void draw(const std::vector<float>&) = 0;
     virtual bool load_texture(std::string) = 0;
     virtual event_type get_event_type() = 0;
 };

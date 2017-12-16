@@ -195,9 +195,7 @@ static bool check_input(const SDL_Event& e, const bind*& result) {
     return false;
 }
 
-std::vector<float> convert_triangle(const triangle& t) {
-    std::vector<float> a;
-    a.reserve(15);
+void convert_triangle(const triangle& t, std::vector<float>& a) {
     for (auto v : t.vertices) {
         a.insert(a.end(), v.x);
         a.insert(a.end(), v.y);
@@ -205,7 +203,6 @@ std::vector<float> convert_triangle(const triangle& t) {
         a.insert(a.end(), v.x_t);
         a.insert(a.end(), v.y_t);
     }
-    return a;
 }
 
 std::string get_source(const std::string& path) {    // static test!
@@ -224,6 +221,54 @@ std::string get_source(const std::string& path) {    // static test!
 engine::engine() {}
 engine::~engine() {
     SDL_Quit();
+}
+
+instance::instance(std::vector<float> coords, float x, float y, float z) {
+    data = coords;
+    position = vertex_2d(x, y, 0.0f, 0.0f);
+    position.z_index = z;
+}
+
+instance::~instance() {}
+
+class wall : public instance {
+   private:
+   public:
+    wall(std::vector<float> data, float x, float y, float z_index)
+        : instance(data, x, y, z_index) {}
+
+    int render_instance() final { return 1; }
+};
+
+class player : public instance {
+   private:
+   public:
+    player(std::vector<float> data, float x, float y, float z_index)
+        : instance(data, x, y, z_index) {}
+
+    int render_instance() final { return 1; }
+};
+
+bool player_exist = false;
+
+instance* create_player(std::vector<float> data, float x, float y, float z) {
+    if (player_exist) {
+        throw std::runtime_error("player already exist");
+    }
+
+    instance* inst = new player(data, x, y, z);
+    player_exist = true;
+    return inst;
+}
+
+void destroy_player(instance* i) {
+    if (player_exist == false) {
+        throw std::runtime_error("player is not created");
+    }
+    if (nullptr == i) {
+        throw std::runtime_error("player is null");
+    }
+    delete i;
 }
 
 class engine_impl final : public engine {
@@ -416,13 +461,16 @@ class engine_impl final : public engine {
         shader_program = create_shader_program(vertex_shader, fragment_shader);
         glUseProgram(shader_program);
 
-        if (!load_texture("test_image.png")) {
+        if (!load_texture("test_image2.png")) {
             return EXIT_FAILURE;
         }
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         std::cerr << "texture loaded" << std::endl;
+
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
 
         return EXIT_SUCCESS;
     }
@@ -437,12 +485,7 @@ class engine_impl final : public engine {
 
     event_type get_event_type() final { return e_type; }
 
-    void draw_triangle(triangle t) {
-        auto data = convert_triangle(t);
-
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-
+    void draw(const std::vector<float>& data) {
         glBindVertexArray(vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -472,17 +515,14 @@ class engine_impl final : public engine {
         //            * 50.f), glm::vec3(0.0f, 0.0f, 1.0f));
 
         transform =
-            glm::scale(transform, glm::vec3(1.0f * scale, k * scale, 1.0f));
+            glm::scale(transform, glm::vec3(1.0f * scale, -k * scale, 1.0f));
 
         GLint transformLoc = glGetUniformLocation(shader_program, "transform");
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE,
                            glm::value_ptr(transform));
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawArrays(GL_TRIANGLES, 0, data.size() / STRIDE_ELEMENTS);
         GL_unbind();
-
-        glDeleteVertexArrays(1, &vao);
-        glDeleteBuffers(1, &vbo);
 
         GL_CHECK();
     }
@@ -524,6 +564,11 @@ class engine_impl final : public engine {
         }
 
         return false;
+    }
+
+    ~engine_impl() {
+        glDeleteVertexArrays(1, &vao);
+        glDeleteBuffers(1, &vbo);
     }
 };
 
