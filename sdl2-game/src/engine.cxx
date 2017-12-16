@@ -229,7 +229,9 @@ instance::instance(std::vector<float> coords, float x, float y, float z) {
     position.z_index = z;
 }
 
-instance::~instance() {}
+instance::~instance() {
+    data.clear();
+}
 
 class wall : public instance {
    private:
@@ -239,6 +241,11 @@ class wall : public instance {
 
     int render_instance() final { return 1; }
 };
+
+instance* create_wall(std::vector<float> data, float x, float y, float z) {
+    instance* inst = new wall(data, x, y, z);
+    return inst;
+}
 
 class player : public instance {
    private:
@@ -276,6 +283,8 @@ class engine_impl final : public engine {
     event_type e_type = event_type::other;
     SDL_Window* window = nullptr;
     GLuint shader_program;
+
+    std::vector<float> vertex_buffer;
 
     int w_h;
     int w_w;
@@ -475,7 +484,13 @@ class engine_impl final : public engine {
         return EXIT_SUCCESS;
     }
 
-    void GL_swap_buffers() final { SDL_GL_SwapWindow(window); }
+    void GL_swap_buffers() final {
+        glDrawArrays(GL_TRIANGLES, 0, vertex_buffer.size() / STRIDE_ELEMENTS);
+        GL_unbind();
+        SDL_GL_SwapWindow(window);
+
+        vertex_buffer.clear();
+    }
     void GL_clear_color() final {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
@@ -485,12 +500,18 @@ class engine_impl final : public engine {
 
     event_type get_event_type() final { return e_type; }
 
-    void draw(const std::vector<float>& data) {
+    void add_object(const std::vector<float>& data) final {
+        for (float f : data)
+            vertex_buffer.insert(vertex_buffer.end(), f);
+    }
+
+    void draw() final {
         glBindVertexArray(vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(data[0]),
-                     data.data(), GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER,
+                     vertex_buffer.size() * sizeof(vertex_buffer[0]),
+                     vertex_buffer.data(), GL_STATIC_DRAW);
 
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
                               STRIDE_ELEMENTS * sizeof(GLfloat), (GLvoid*)0);
@@ -520,9 +541,6 @@ class engine_impl final : public engine {
         GLint transformLoc = glGetUniformLocation(shader_program, "transform");
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE,
                            glm::value_ptr(transform));
-
-        glDrawArrays(GL_TRIANGLES, 0, data.size() / STRIDE_ELEMENTS);
-        GL_unbind();
 
         GL_CHECK();
     }

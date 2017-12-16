@@ -106,7 +106,8 @@ class engine {
     virtual int CHL_init(int, int) = 0;
     virtual bool read_input(event&) = 0;
     virtual void CHL_exit() = 0;
-    virtual void draw(const std::vector<float>&) = 0;
+    virtual void add_object(const std::vector<float>&) = 0;
+    virtual void draw() = 0;
     virtual bool load_texture(std::string) = 0;
     virtual event_type get_event_type() = 0;
 };

@@ -96,7 +96,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 for (auto t : t_arr)
                     convert_triangle(t + add_t, data);
 
-                eng->draw(data);
+                eng->add_object(data);
+                eng->draw();
 
                 data.clear();
 
@@ -119,7 +120,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 convert_triangle(tr1, d);
                 convert_triangle(tr2, d);
 
-                eng->draw(d);
+                eng->add_object(d);
+                eng->draw();
 
                 eng->GL_swap_buffers();
             } break;
@@ -149,7 +151,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 convert_triangle(tr1, d);
                 convert_triangle(tr2, d);
 
-                eng->draw(d);
+                eng->add_object(d);
+                eng->draw();
 
                 eng->GL_swap_buffers();
             } break;
