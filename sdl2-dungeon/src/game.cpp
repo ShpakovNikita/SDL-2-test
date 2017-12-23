@@ -12,6 +12,12 @@
 
 enum class mode { draw, look, idle };
 
+const std::string SND_FOLDER = "sounds\\";
+
+const std::string START_MUSIC = "main.wav";
+const std::string IDLE_SOUND = "idle.wav";
+const std::string MOVE_SOUND = "move.wav";
+
 const std::string VERTEX_FILE = "vertices.txt";
 const std::string SIN_FILE = "sin.txt";
 
@@ -49,9 +55,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     std::vector<instance*> bricks;
 
-    DungeonGenerator generator;
-    auto map = generator.Generate();
-    std::vector<int> tile_set = map.Print();
+    //    DungeonGenerator generator;
+    //    auto map = generator.Generate();
+    //    std::vector<int> tile_set = map.Print();
 
     //    for (int y = 0; y < tile_set[tile_set.size() - 1]; y++) {
     //        for (int x = 0; x < tile_set[tile_set.size() - 2]; x++) {
@@ -70,6 +76,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
     //        }
     //        std::cout << std::endl;
     //    }
+    sound start_music(SND_FOLDER + START_MUSIC);
+    sound idle_sound(SND_FOLDER + IDLE_SOUND);
+    sound move_sound(SND_FOLDER + MOVE_SOUND);
+    idle_sound.play_always();
+    start_music.play_always();
 
     bricks.insert(bricks.end(), create_wall(data, 1, -2, 0.0f));
     bricks.insert(bricks.end(), create_wall(data, 1, -1, 0.0f));
@@ -77,8 +88,10 @@ int main(int /*argc*/, char* /*argv*/ []) {
     bricks.insert(bricks.end(), create_wall(data, 1, 1, 0.0f));
     bricks.insert(bricks.end(), create_wall(data, 1, 2, 0.0f));
 
-    std::cout << tile_set[tile_set.size() - 1] << " "
-              << tile_set[tile_set.size() - 2] << std::endl;
+    bool one_time_change = true;
+
+    //    std::cout << tile_set[tile_set.size() - 1] << " "
+    //              << tile_set[tile_set.size() - 2] << std::endl;
 
     data.clear();
 
@@ -109,23 +122,48 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     break;
             }
 
-            if (eng->get_event_type() == event_type::pressed)
+            if (eng->get_event_type() == event_type::pressed) {
                 keys[static_cast<int>(e)] = true;
+            }
 
-            else
+            else {
                 keys[static_cast<int>(e) - 1] = false;
+            }
         }
 
         switch (current_mode) {
             case mode::idle: {
-                if (keys[static_cast<int>(event::left_pressed)])
+                bool moved = false;
+                if (keys[static_cast<int>(event::left_pressed)]) {
+                    moved = true;
                     posX -= speed * delta_time;
-                if (keys[static_cast<int>(event::right_pressed)])
+                }
+                if (keys[static_cast<int>(event::right_pressed)]) {
+                    moved = true;
                     posX += speed * delta_time;
-                if (keys[static_cast<int>(event::up_pressed)])
+                }
+                if (keys[static_cast<int>(event::up_pressed)]) {
+                    moved = true;
                     posY -= speed * delta_time;
-                if (keys[static_cast<int>(event::down_pressed)])
+                }
+                if (keys[static_cast<int>(event::down_pressed)]) {
+                    moved = true;
                     posY += speed * delta_time;
+                }
+
+                if (moved && one_time_change) {
+                    idle_sound.stop();
+                    move_sound.play_always();
+                    std::cout << "move" << std::endl;
+                    one_time_change = false;
+                }
+
+                if (!moved && !one_time_change) {
+                    idle_sound.play_always();
+                    move_sound.stop();
+                    std::cout << "stop" << std::endl;
+                    one_time_change = true;
+                }
 
                 eng->GL_clear_color();
 

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.2)
 project(SDLdynamic)
 
 set(CMAKE_CXX_STANDARD 11)
-set(SOURCE game.cpp engine.cxx headers/engine.hxx headers/picopng.hxx headers/audio.h dungeon.cpp)
+set(SOURCE game.cpp engine.cxx sound.cxx headers/engine.hxx headers/picopng.hxx headers/audio.h dungeon.cpp)
 
 if(UNIX)
     set(PROJECT_LINK_LIB -lSDL2main -lSDL2)

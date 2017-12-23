@@ -71,12 +71,15 @@ triangle operator+(triangle& tl, triangle& tr);
 
 triangle blend(const triangle&, const triangle&, const float);
 
+class instance;
 class engine;
 
 engine* create_engine();
 void destroy_engine(engine* e);
 
 enum class event_type { pressed, released, other };
+
+bool check_collision(instance&, instance&);
 
 class instance {
    public:
@@ -85,6 +88,7 @@ class instance {
     virtual ~instance();
 
     vertex_2d position;
+    vertex_2d size;
 
     virtual std::vector<float> get_vector() = 0;
 

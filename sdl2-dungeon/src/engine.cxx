@@ -223,10 +223,23 @@ engine::~engine() {
     SDL_Quit();
 }
 
+bool check_collision(instance& one, instance& two)    // AABB - AABB collision
+{
+    // Collision x-axis?
+    bool collisionX = one.position.x + one.size.x >= two.position.x &&
+                      two.position.x + two.size.x >= one.position.x;
+    // Collision y-axis?
+    bool collisionY = one.position.y + one.size.y >= two.position.y &&
+                      two.position.y + two.size.y >= one.position.y;
+    // Collision only if on both axes
+    return collisionX && collisionY;
+}
+
 instance::instance(std::vector<float> coords, float x, float y, float z) {
     data = coords;
     position = vertex_2d(x, y, 0.0f, 0.0f);
     position.z_index = z;
+    size = vertex_2d(32, 32, 0.0f, 0.0f);
 }
 
 instance::~instance() {
