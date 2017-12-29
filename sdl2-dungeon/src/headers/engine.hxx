@@ -8,6 +8,8 @@
 #ifndef HEADERS_ENGINE_HXX_
 #define HEADERS_ENGINE_HXX_
 
+#define GLEW_BUILD
+
 #define STRIDE_ELEMENTS 5
 
 #include <vector>
@@ -81,6 +83,22 @@ enum class event_type { pressed, released, other };
 
 bool check_collision(instance&, instance&);
 
+class texture {
+   public:
+    texture();
+    ~texture();
+
+    bool load_texture(const std::string&);
+
+    void bind();
+    void unbind();
+
+   private:
+    int w;
+    int h;
+    unsigned int tex;
+};
+
 class instance {
    public:
     virtual int render_instance() = 0;
@@ -96,8 +114,14 @@ class instance {
     std::vector<float> data;
 };
 
-instance* create_player(std::vector<float>, float x, float y, float z);
-void destroy_player(instance*);
+class life_form : public instance {
+   public:
+    life_form(std::vector<float>, float x, float y, float z, int speed);
+    virtual ~life_form();
+    virtual void move() = 0;
+};
+life_form* create_player(std::vector<float>, float x, float y, float z);
+void destroy_player(life_form*);
 
 instance* create_wall(std::vector<float> data, float x, float y, float z);
 
@@ -131,7 +155,7 @@ class engine {
     virtual void CHL_exit() = 0;
     virtual void add_object(const std::vector<float>&) = 0;
     virtual void draw() = 0;
-    virtual bool load_texture(std::string) = 0;
+    //    virtual bool load_texture(std::string) = 0;
     virtual event_type get_event_type() = 0;
 };
 

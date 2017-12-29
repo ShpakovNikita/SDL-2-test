@@ -28,6 +28,7 @@ void sound::play_always() const {
     constexpr uint32_t max_play = 20;
     for (uint32_t i = 0; i < max_play; ++i)
         SDL_QueueAudio(device_id, buffer, buffer_size);
+
     SDL_PauseAudioDevice(device_id, 0);
 }
 void sound::stop() const {

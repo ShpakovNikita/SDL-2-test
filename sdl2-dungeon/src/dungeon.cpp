@@ -2,6 +2,7 @@
 #include <string>
 #include <random>
 #include <cassert>
+#include <time.h>
 
 enum class Tile {
     Unused,
@@ -89,50 +90,69 @@ class Map {
         for (auto y = 0; y != ySize; y++) {
             for (auto x = 0; x != xSize; x++) {
                 switch (GetCell(x, y)) {
-                    //                    case Tile::Unused:
-                    //                        std::cout << " ";
-                    //                        break;
-                    //                    case Tile::DirtWall:
-                    //                        std::cout << "#";
-                    //                        break;
-                    //                    case Tile::DirtFloor:
-                    //                        std::cout << ".";
-                    //                        break;
-                    //                    case Tile::Corridor:
-                    //                        std::cout << ".";
-                    //                        break;
-                    //                    case Tile::Door:
-                    //                        std::cout << "+";
-                    //                        break;
-                    //                    case Tile::UpStairs:
-                    //                        std::cout << "<";
-                    //                        break;
-                    //                    case Tile::DownStairs:
-                    //                        std::cout << ">";
-                    //                        break;
-                    case Tile::Corridor:
-                    case Tile::DirtFloor:
-                        tile_set.insert(tile_set.end(), 0);
-                        break;
+                        //                    case Tile::Unused:
+                        //                        tile_set.insert(tile_set.end(),
+                        //                        ' '); break;
+                        //                    case Tile::DirtWall:
+                        //                        tile_set.insert(tile_set.end(),
+                        //                        '#'); break;
+                        //                    case Tile::DirtFloor:
+                        //                        tile_set.insert(tile_set.end(),
+                        //                        '.'); break;
+                        //                    case Tile::Corridor:
+                        //                        tile_set.insert(tile_set.end(),
+                        //                        '.'); break;
+                        //                    case Tile::Door:
+                        //                        tile_set.insert(tile_set.end(),
+                        //                        '+'); break;
+                        //                    case Tile::UpStairs:
+                        //                        tile_set.insert(tile_set.end(),
+                        //                        '<'); break;
+                        //                    case Tile::DownStairs:
+                        //                        tile_set.insert(tile_set.end(),
+                        //                        '>'); break;
                     case Tile::DirtWall:
+                    case Tile::Unused:
                         tile_set.insert(tile_set.end(), 1);
                         break;
-                    case Tile::Unused:
-                        tile_set.insert(tile_set.end(), 2);
+                    default:
+                        tile_set.insert(tile_set.end(), 0);
                 };
-            }
-        }
-        for (auto y = 0; y != ySize; y++) {
-            for (auto x = 0; x != xSize; x++) {
-                std::cout << *(tile_set.begin() + y * ySize + x ) << " ";
+                switch (GetCell(x, y)) {
+                    case Tile::Unused:
+                        std::cout << " ";
+                        break;
+                    case Tile::DirtWall:
+                        std::cout << "#";
+                        break;
+                    case Tile::DirtFloor:
+                        std::cout << ".";
+                        break;
+                    case Tile::Corridor:
+                        std::cout << ".";
+                        break;
+                    case Tile::Door:
+                        std::cout << "+";
+                        break;
+                    case Tile::UpStairs:
+                        std::cout << "<";
+                        break;
+                    case Tile::DownStairs:
+                        std::cout << ">";
+                        break;
+                };
             }
             std::cout << std::endl;
         }
+        //        for (auto y = 0; y != ySize; y++) {
+        //            for (auto x = 0; x != xSize; x++) {
+        //                std::cout << *(tile_set.begin() + y * ySize + x) << "
+        //                ";
+        //            }
+        //            std::cout << std::endl;
+        //        }
 
         std::cout << std::endl;
-
-        tile_set.insert(tile_set.end(), xSize);
-        tile_set.insert(tile_set.end(), ySize);
 
         return tile_set;
     }
@@ -153,10 +173,10 @@ class DungeonGenerator {
 
     int ChanceRoom, ChanceCorridor;
 
-    DungeonGenerator()
+    DungeonGenerator(int x, int y)
         : Seed(std::random_device()()),
-          XSize(32),
-          YSize(24),
+          XSize(x),
+          YSize(y),
           MaxFeatures(100),
           ChanceRoom(75),
           ChanceCorridor(25) {}
@@ -166,8 +186,12 @@ class DungeonGenerator {
         assert(MaxFeatures > 0 && MaxFeatures <= 100);
         assert(XSize > 3 && XSize <= 80);
         assert(YSize > 3 && YSize <= 25);
+        std::srand(time(nullptr));
+        Seed = rand() % 100000000;
 
         auto rng = RngT(Seed);
+        std::cout << Seed << std::endl;
+
         auto map = Map(XSize, YSize, Tile::Unused);
 
         MakeDungeon(map, rng);

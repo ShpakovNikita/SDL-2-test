@@ -5,9 +5,7 @@
  *      Author: Shaft
  */
 #include "headers/engine.hxx"
-#include "headers/picopng.hxx"
 
-#define GLEW_BUILD
 #include <GL/glew.h>
 #include <GL/glu.h>
 #include <GL/gl.h>
@@ -242,9 +240,18 @@ instance::instance(std::vector<float> coords, float x, float y, float z) {
     size = vertex_2d(32, 32, 0.0f, 0.0f);
 }
 
+life_form::life_form(std::vector<float> coords,
+                     float x,
+                     float y,
+                     float z,
+                     int speed)
+    : instance(coords, x, y, z) {}
+
 instance::~instance() {
     data.clear();
 }
+
+life_form::~life_form() {}
 
 class wall : public instance {
    private:
@@ -272,11 +279,11 @@ instance* create_wall(std::vector<float> data, float x, float y, float z) {
     return inst;
 }
 
-class player : public instance {
+class player : public life_form {
    private:
    public:
-    player(std::vector<float> data, float x, float y, float z_index)
-        : instance(data, x, y, z_index) {}
+    player(std::vector<float> data, float x, float y, float z_index, int speed)
+        : life_form(data, x, y, z_index, speed) {}
 
     int render_instance() { return 1; }
 
@@ -291,21 +298,23 @@ class player : public instance {
 
         return v;
     }
+
+    void move() final {}
 };
 
 bool player_exist = false;
 
-instance* create_player(std::vector<float> data, float x, float y, float z) {
+life_form* create_player(std::vector<float> data, float x, float y, float z) {
     if (player_exist) {
         throw std::runtime_error("player already exist");
     }
 
-    instance* inst = new player(data, x, y, z);
+    life_form* inst = new player(data, x, y, z, 1);
     player_exist = true;
     return inst;
 }
 
-void destroy_player(instance* i) {
+void destroy_player(life_form* i) {
     if (player_exist == false) {
         throw std::runtime_error("player is not created");
     }
@@ -326,70 +335,72 @@ class engine_impl final : public engine {
     int w_h;
     int w_w;
     int t_size;
+    texture tex;
 
     GLuint vao, vbo;
 
-    bool load_texture(std::string path) final {
-        std::vector<unsigned char> png_file_in_memory;
-        std::ifstream ifs(path.data(), std::ios_base::binary);
-        if (!ifs) {
-            return false;
-        }
-        ifs.seekg(0, std::ios_base::end);
-        size_t pos_in_file = ifs.tellg();
-        png_file_in_memory.resize(pos_in_file);
-        ifs.seekg(0, std::ios_base::beg);
-        if (!ifs) {
-            return false;
-        }
-
-        ifs.read(reinterpret_cast<char*>(png_file_in_memory.data()),
-                 pos_in_file);
-        if (!ifs.good()) {
-            return false;
-        }
-
-        std::vector<unsigned char> image;
-        unsigned long w = 0;
-        unsigned long h = 0;
-        int error = decodePNG(image, w, h, &png_file_in_memory[0],
-                              png_file_in_memory.size(), true);
-
-        // if there's an error, display it
-        if (error != 0) {
-            std::cerr << "error: " << error << std::endl;
-            return false;
-        }
-
-        GLuint tex_handl = 0;
-        glGenTextures(1, &tex_handl);
-        GL_CHECK();
-        glBindTexture(GL_TEXTURE_2D, tex_handl);
-        GL_CHECK();
-
-        GLint mipmap_level = 0;    // test
-        GLint border = 0;
-
-        glTexImage2D(GL_TEXTURE_2D, mipmap_level, GL_RGBA, w, h, border,
-                     GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
-        GL_CHECK();
-
-        glUniform1i(glGetUniformLocation(shader_program, "our_texture"), 0);
-        //        glGenerateMipmap(GL_TEXTURE_2D);
-        //        GL_CHECK();
-
-        //        float borderColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
-        //        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR,
-        //        borderColor);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        // Set texture filtering
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-        return true;
-    }
+    //    bool load_texture(std::string path) final {
+    //        std::vector<unsigned char> png_file_in_memory;
+    //        std::ifstream ifs(path.data(), std::ios_base::binary);
+    //        if (!ifs) {
+    //            return false;
+    //        }
+    //        ifs.seekg(0, std::ios_base::end);
+    //        size_t pos_in_file = ifs.tellg();
+    //        png_file_in_memory.resize(pos_in_file);
+    //        ifs.seekg(0, std::ios_base::beg);
+    //        if (!ifs) {
+    //            return false;
+    //        }
+    //
+    //        ifs.read(reinterpret_cast<char*>(png_file_in_memory.data()),
+    //                 pos_in_file);
+    //        if (!ifs.good()) {
+    //            return false;
+    //        }
+    //
+    //        std::vector<unsigned char> image;
+    //        unsigned long w = 0;
+    //        unsigned long h = 0;
+    //        int error = decodePNG(image, w, h, &png_file_in_memory[0],
+    //                              png_file_in_memory.size(), true);
+    //
+    //        // if there's an error, display it
+    //        if (error != 0) {
+    //            std::cerr << "error: " << error << std::endl;
+    //            return false;
+    //        }
+    //
+    //        GLuint tex_handl = 0;
+    //        glGenTextures(1, &tex_handl);
+    //        GL_CHECK();
+    //        glBindTexture(GL_TEXTURE_2D, tex_handl);
+    //        GL_CHECK();
+    //
+    //        GLint mipmap_level = 0;    // test
+    //        GLint border = 0;
+    //
+    //        glTexImage2D(GL_TEXTURE_2D, mipmap_level, GL_RGBA, w, h, border,
+    //                     GL_RGBA, GL_UNSIGNED_BYTE, &image[0]);
+    //        GL_CHECK();
+    //
+    //        glUniform1i(glGetUniformLocation(shader_program, "our_texture"),
+    //        0);
+    //        //        glGenerateMipmap(GL_TEXTURE_2D);
+    //        //        GL_CHECK();
+    //
+    //        //        float borderColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
+    //        //        glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR,
+    //        //        borderColor);
+    //
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    //        // Set texture filtering
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    //
+    //        return true;
+    //    }
 
     void GL_unbind() {
         glBindBuffer(GL_ARRAY_BUFFER, 0);    // test
@@ -509,9 +520,10 @@ class engine_impl final : public engine {
         shader_program = create_shader_program(vertex_shader, fragment_shader);
         glUseProgram(shader_program);
 
-        if (!load_texture("brick.png")) {
+        if (!tex.load_texture("brick.png")) {
             return EXIT_FAILURE;
         }
+
         std::cerr << "texture loaded" << std::endl;
 
         glEnable(GL_BLEND);
@@ -548,6 +560,10 @@ class engine_impl final : public engine {
     }
 
     void draw() final {
+        glActiveTexture(GL_TEXTURE0);
+        tex.bind();
+        glUniform1i(glGetUniformLocation(shader_program, "our_texture"), 0);
+
         glBindVertexArray(vao);
 
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -579,7 +595,12 @@ class engine_impl final : public engine {
 
         transform = glm::scale(transform,
                                glm::vec3(1.0f * (t_size / (float)w_w),
-                                         -1.0f * (t_size / (float)w_h), 1.0f));
+                                         1.0f * (t_size / (float)w_h), 1.0f));
+
+        //        transform = glm::scale(transform,
+        //                               glm::vec3(1.0f * ((float)w_w / t_size),
+        //                                         -1.0f * ((float)w_h /
+        //                                         t_size), 1.0f));
 
         GLint transformLoc = glGetUniformLocation(shader_program, "transform");
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE,

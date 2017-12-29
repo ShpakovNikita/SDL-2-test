@@ -6,6 +6,8 @@
 #include <iostream>
 #include <memory>
 #include <math.h>
+#include <cstdlib>
+#include <time.h>
 
 #include "headers/engine.hxx"
 #include "dungeon.cpp"
@@ -24,14 +26,14 @@ const std::string SIN_FILE = "sin.txt";
 constexpr int WINDOW_WIDTH = 1024;
 constexpr int WINDOW_HEIGHT = 640;
 
-constexpr int TILE_SIZE = 320;
+constexpr int TILE_SIZE = 32;
 
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
     std::unique_ptr<engine, void (*)(engine*)> eng(create_engine(),
                                                    destroy_engine);
 
-    std::unique_ptr<instance, void (*)(instance*)> player(
+    std::unique_ptr<life_form, void (*)(life_form*)> player(
         create_player(std::vector<float>(), 0.0f, 0.0f, 0.0f), destroy_player);
 
     std::ifstream fin(VERTEX_FILE);
@@ -43,7 +45,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE);
     mode current_mode = mode::idle;
 
-    float posX = 0.0f, posY = 0.0f;
+    float posX = 1.0f, posY = 1.0f;
 
     bool keys[17];
     for (int i = 0; i < 17; i++)
@@ -55,38 +57,38 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     std::vector<instance*> bricks;
 
-    //    DungeonGenerator generator;
-    //    auto map = generator.Generate();
-    //    std::vector<int> tile_set = map.Print();
+    int x_size = 34, y_size = 20;
+    DungeonGenerator generator(x_size, y_size);
+    auto map = generator.Generate();
+    std::vector<int> tile_set = map.Print();
 
-    //    for (int y = 0; y < tile_set[tile_set.size() - 1]; y++) {
-    //        for (int x = 0; x < tile_set[tile_set.size() - 2]; x++) {
-    //            std::cout << *(tile_set.begin() +
-    //                           y * tile_set[tile_set.size() - 1] + x)
-    //                      << " ";
-    //            if (*(tile_set.begin() + y * tile_set[tile_set.size() - 1] +
-    //            x) ==
-    //                1)
-    //                bricks.insert(
-    //                    bricks.end(),
-    //                    create_wall(
-    //                        data, -1.0f + (x * TILE_SIZE) /
-    //                        (float)WINDOW_WIDTH, 1.0f - (y * TILE_SIZE) /
-    //                        (float)WINDOW_HEIGHT, 0.0f));
-    //        }
-    //        std::cout << std::endl;
-    //    }
+    int X_MAP = WINDOW_WIDTH / TILE_SIZE;
+    int Y_MAP = WINDOW_HEIGHT / TILE_SIZE;
+
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++) {
+            std::cout << *(tile_set.begin() + y * x_size + x) << " ";
+            if (*(tile_set.begin() + y * x_size + x) == 1)
+                bricks.insert(bricks.end(),
+                              create_wall(data, -X_MAP + 2 * x + 1,
+                                          Y_MAP - 2 * y - 1, 0.0f));
+        }
+        std::cout << std::endl;
+    }
     sound start_music(SND_FOLDER + START_MUSIC);
     sound idle_sound(SND_FOLDER + IDLE_SOUND);
     sound move_sound(SND_FOLDER + MOVE_SOUND);
     idle_sound.play_always();
     start_music.play_always();
 
-    bricks.insert(bricks.end(), create_wall(data, 1, -2, 0.0f));
-    bricks.insert(bricks.end(), create_wall(data, 1, -1, 0.0f));
-    bricks.insert(bricks.end(), create_wall(data, 1, 0, 0.0f));
-    bricks.insert(bricks.end(), create_wall(data, 1, 1, 0.0f));
-    bricks.insert(bricks.end(), create_wall(data, 1, 2, 0.0f));
+    //    bricks.insert(bricks.end(), create_wall(data, 1, -2, 0.0f));
+    //    bricks.insert(bricks.end(), create_wall(data, 1, -1, 0.0f));
+    //    bricks.insert(bricks.end(), create_wall(data, 1, 0, 0.0f));
+    //    bricks.insert(bricks.end(), create_wall(data, 1, 1, 0.0f));
+    //    bricks.insert(bricks.end(), create_wall(data, 1, 2, 0.0f));
+    //    bricks.insert(bricks.end(), create_wall(data, 0 - X_MAP, 0 + Y_MAP,
+    //    0.0f)); bricks.insert(bricks.end(), create_wall(data, 0 - X_MAP, 0 +
+    //    Y_MAP, 0.0f));
 
     bool one_time_change = true;
 
@@ -95,7 +97,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     data.clear();
 
-    int speed = 1;
+    int speed = 4;
     float prev_frame = eng->GL_time();
     bool quit = false;
     while (!quit) {
@@ -144,11 +146,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 }
                 if (keys[static_cast<int>(event::up_pressed)]) {
                     moved = true;
-                    posY -= speed * delta_time;
+                    posY += speed * delta_time;
                 }
                 if (keys[static_cast<int>(event::down_pressed)]) {
                     moved = true;
-                    posY += speed * delta_time;
+                    posY -= speed * delta_time;
                 }
 
                 if (moved && one_time_change) {
