@@ -40,6 +40,11 @@ enum class event {
     turn_off
 };
 
+struct point {
+    point(int _x, int _y) : x(_x), y(_y) {}
+    int x, y;
+};
+
 struct vertex_2d {
     vertex_2d() : x(0.f), y(0.f), z_index(0.f), x_t(0.f), y_t(0.f) {}
     vertex_2d(float _x, float _y, float _x_t, float _y_t)
@@ -81,7 +86,7 @@ void destroy_engine(engine* e);
 
 enum class event_type { pressed, released, other };
 
-bool check_collision(instance&, instance&);
+bool check_collision(instance*, instance*, float);
 static bool is_intersect(vertex_2d* array_1,
                          int len_1,
                          vertex_2d* array_2,
@@ -112,6 +117,7 @@ class instance {
     vertex_2d position;
     vertex_2d size;
 
+    point* get_points();
     std::vector<float> get_vector();
 
    protected:

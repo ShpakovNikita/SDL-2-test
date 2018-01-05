@@ -72,6 +72,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     bool placed = false;
     std::unique_ptr<life_form, void (*)(life_form*)> player(
         create_player(data, 0.0f, 0.0f, 0.0f), destroy_player);
+
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
             std::cout << *(tile_set.begin() + y * x_size + x) << " ";
@@ -89,20 +90,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
         std::cout << std::endl;
     }
 
+    //    bricks.insert(bricks.end(),
+    //                  create_wall(data, -X_MAP + 1, -Y_MAP + 1, 0.0f));
+
     sound start_music(SND_FOLDER + START_MUSIC);
     sound idle_sound(SND_FOLDER + IDLE_SOUND);
     sound move_sound(SND_FOLDER + MOVE_SOUND);
     idle_sound.play_always();
     //    start_music.play_always();
-
-    //    bricks.insert(bricks.end(), create_wall(data, 1, -2, 0.0f));
-    //    bricks.insert(bricks.end(), create_wall(data, 1, -1, 0.0f));
-    //    bricks.insert(bricks.end(), create_wall(data, 1, 0, 0.0f));
-    //    bricks.insert(bricks.end(), create_wall(data, 1, 1, 0.0f));
-    //    bricks.insert(bricks.end(), create_wall(data, 1, 2, 0.0f));
-    //    bricks.insert(bricks.end(), create_wall(data, 0 - X_MAP, 0 + Y_MAP,
-    //    0.0f)); bricks.insert(bricks.end(), create_wall(data, 0 - X_MAP, 0 +
-    //    Y_MAP, 0.0f));
 
     bool one_time_change = true;
 
@@ -148,23 +143,29 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         bool moved = false;
+        float delta_x = 0;
+        float delta_y = 0;
         if (keys[static_cast<int>(event::left_pressed)]) {
             moved = true;
-            player->position.x -= speed * delta_time;
+            delta_x = -speed * delta_time;
         }
         if (keys[static_cast<int>(event::right_pressed)]) {
             moved = true;
-            player->position.x += speed * delta_time;
+            delta_x = speed * delta_time;
         }
         if (keys[static_cast<int>(event::up_pressed)]) {
             moved = true;
-            player->position.y -= speed * delta_time;
+            delta_y = -speed * delta_time;
         }
         if (keys[static_cast<int>(event::down_pressed)]) {
             moved = true;
-            player->position.y += speed * delta_time;
+            delta_y = speed * delta_time;
         }
 
+        player->position.x += delta_x;
+        player->position.y += delta_y;
+
+        /* play music */
         if (moved && one_time_change) {
             idle_sound.stop();
             move_sound.play_always();
@@ -179,20 +180,22 @@ int main(int /*argc*/, char* /*argv*/ []) {
             one_time_change = true;
         }
 
-        eng->GL_clear_color();
+        /* check collisions */
+        for (instance* inst : bricks) {
+            if (check_collision(player.get(), inst, delta_time)) {
+                std::cout << "Collide!" << std::endl;
+                player->position.x -= delta_x;
+                while (check_collision(player.get(), inst, delta_time))
+                    player->position.y -= delta_y / TILE_SIZE * 2.0f;
 
-        //                triangle add_t(vertex_2d(player->position.x,
-        //                player->position.y,
-        //                                         0.0f, 0.0f),
-        //                               vertex_2d(player->position.x,
-        //                               player->position.y,
-        //                                         0.0f, 0.0f),
-        //                               vertex_2d(player->position.x,
-        //                               player->position.y,
-        //                                         0.0f, 0.0f));
-        //
-        //                for (auto t : t_arr)
-        //                    convert_triangle(t + add_t, data);
+                player->position.x += delta_x;
+                while (check_collision(player.get(), inst, delta_time))
+                    player->position.x -= delta_x / TILE_SIZE * 2.0f;
+            }
+        }
+
+        /* draw sprites */
+        eng->GL_clear_color();
 
         for (auto brick : bricks)
             eng->add_object(brick);
