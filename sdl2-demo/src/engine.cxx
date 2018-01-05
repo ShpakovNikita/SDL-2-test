@@ -558,7 +558,7 @@ class engine_impl final : public engine {
     void draw(texture* text) final {
         glUseProgram(shader_program);
 
-        tex->bind();
+        text->bind();
         glUniform1i(glGetUniformLocation(shader_program, "our_texture"), 0);
 
         glBindVertexArray(vao);

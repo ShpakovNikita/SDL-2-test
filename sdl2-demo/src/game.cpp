@@ -30,11 +30,18 @@ constexpr int TILE_SIZE = 32;
 
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
-    texture* brick_tex = new texture();
-    brick_tex->load_texture("brick.png");
-
     std::unique_ptr<engine, void (*)(engine*)> eng(create_engine(),
                                                    destroy_engine);
+
+    eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE);
+
+    texture* brick_tex = new texture();
+    if (!brick_tex->load_texture("brick.png"))
+        std::cerr << "Texture not found!" << std::endl;
+
+    texture* player_tex = new texture();
+    if (!player_tex->load_texture("hero.png"))
+        std::cerr << "Texture not found!" << std::endl;
 
     std::ifstream fin(VERTEX_FILE);
     assert(!!fin);
@@ -42,7 +49,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
     triangle t_arr[2];
     fin >> t_arr[0] >> t_arr[1];
 
-    eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE);
     mode current_mode = mode::idle;
 
     bool keys[17];
@@ -141,123 +147,64 @@ int main(int /*argc*/, char* /*argv*/ []) {
             }
         }
 
-        switch (current_mode) {
-            case mode::idle: {
-                bool moved = false;
-                if (keys[static_cast<int>(event::left_pressed)]) {
-                    moved = true;
-                    player->position.x -= speed * delta_time;
-                }
-                if (keys[static_cast<int>(event::right_pressed)]) {
-                    moved = true;
-                    player->position.x += speed * delta_time;
-                }
-                if (keys[static_cast<int>(event::up_pressed)]) {
-                    moved = true;
-                    player->position.y -= speed * delta_time;
-                }
-                if (keys[static_cast<int>(event::down_pressed)]) {
-                    moved = true;
-                    player->position.y += speed * delta_time;
-                }
-
-                if (moved && one_time_change) {
-                    idle_sound.stop();
-                    move_sound.play_always();
-                    std::cout << "move" << std::endl;
-                    one_time_change = false;
-                }
-
-                if (!moved && !one_time_change) {
-                    idle_sound.play_always();
-                    move_sound.stop();
-                    std::cout << "stop" << std::endl;
-                    one_time_change = true;
-                }
-
-                eng->GL_clear_color();
-
-                //                triangle add_t(vertex_2d(player->position.x,
-                //                player->position.y,
-                //                                         0.0f, 0.0f),
-                //                               vertex_2d(player->position.x,
-                //                               player->position.y,
-                //                                         0.0f, 0.0f),
-                //                               vertex_2d(player->position.x,
-                //                               player->position.y,
-                //                                         0.0f, 0.0f));
-                //
-                //                for (auto t : t_arr)
-                //                    convert_triangle(t + add_t, data);
-
-                for (auto brick : bricks)
-                    eng->add_object(brick);
-
-                eng->draw(brick_tex);
-
-                eng->add_object(player.get());
-                eng->draw(brick_tex);
-
-                data.clear();
-
-                eng->GL_swap_buffers();
-            } break;
-            case mode::draw: {
-                eng->GL_clear_color();
-
-                std::ifstream fin(VERTEX_FILE);
-                assert(!!fin);
-
-                float alpha = sin(eng->GL_time()) / 2. + 0.5f;
-                triangle t1q, t2q, t1r, t2r;
-                fin >> t1q >> t2q >> t1r >> t2r;
-
-                // draw events
-                triangle tr1 = blend(t1q, t1r, alpha);
-                triangle tr2 = blend(t2q, t2r, alpha);
-                std::vector<float> d;
-                convert_triangle(tr1, d);
-                convert_triangle(tr2, d);
-
-                //                eng->add_object(d);
-                eng->draw(brick_tex);
-
-                eng->GL_swap_buffers();
-            } break;
-            case mode::look: {
-                eng->GL_clear_color();
-
-                std::ifstream fin(SIN_FILE);
-                assert(!!fin);
-
-                triangle tr1, tr2;
-                fin >> tr1 >> tr2;
-
-                float h = sin(eng->GL_time()) * 0.4f - 0.6f;
-                float w = cos(eng->GL_time()) * 0.4f - 0.6f;
-
-                for (auto& v : tr1.vertices) {
-                    v.x_t += w;
-                    v.y_t += h;
-                }
-
-                for (auto& v : tr2.vertices) {
-                    v.x_t += w;
-                    v.y_t += h;
-                }
-
-                std::vector<float> d;
-                convert_triangle(tr1, d);
-                convert_triangle(tr2, d);
-
-                //                eng->add_object(d);
-                eng->draw(brick_tex);
-
-                eng->GL_swap_buffers();
-            } break;
-            default:
-                break;
+        bool moved = false;
+        if (keys[static_cast<int>(event::left_pressed)]) {
+            moved = true;
+            player->position.x -= speed * delta_time;
         }
+        if (keys[static_cast<int>(event::right_pressed)]) {
+            moved = true;
+            player->position.x += speed * delta_time;
+        }
+        if (keys[static_cast<int>(event::up_pressed)]) {
+            moved = true;
+            player->position.y -= speed * delta_time;
+        }
+        if (keys[static_cast<int>(event::down_pressed)]) {
+            moved = true;
+            player->position.y += speed * delta_time;
+        }
+
+        if (moved && one_time_change) {
+            idle_sound.stop();
+            move_sound.play_always();
+            std::cout << "move" << std::endl;
+            one_time_change = false;
+        }
+
+        if (!moved && !one_time_change) {
+            idle_sound.play_always();
+            move_sound.stop();
+            std::cout << "stop" << std::endl;
+            one_time_change = true;
+        }
+
+        eng->GL_clear_color();
+
+        //                triangle add_t(vertex_2d(player->position.x,
+        //                player->position.y,
+        //                                         0.0f, 0.0f),
+        //                               vertex_2d(player->position.x,
+        //                               player->position.y,
+        //                                         0.0f, 0.0f),
+        //                               vertex_2d(player->position.x,
+        //                               player->position.y,
+        //                                         0.0f, 0.0f));
+        //
+        //                for (auto t : t_arr)
+        //                    convert_triangle(t + add_t, data);
+
+        for (auto brick : bricks)
+            eng->add_object(brick);
+
+        eng->draw(brick_tex);
+
+        eng->add_object(player.get());
+        eng->draw(player_tex);
+
+        data.clear();
+
+        eng->GL_swap_buffers();
     }
 
     eng->CHL_exit();
