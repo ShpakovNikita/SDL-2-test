@@ -30,11 +30,11 @@ constexpr int TILE_SIZE = 32;
 
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
-    std::unique_ptr<engine, void (*)(engine*)> eng(create_engine(),
-                                                   destroy_engine);
-
     texture* brick_tex = new texture();
     brick_tex->load_texture("brick.png");
+
+    std::unique_ptr<engine, void (*)(engine*)> eng(create_engine(),
+                                                   destroy_engine);
 
     std::ifstream fin(VERTEX_FILE);
     assert(!!fin);

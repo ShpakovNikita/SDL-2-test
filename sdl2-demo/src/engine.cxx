@@ -335,7 +335,7 @@ class engine_impl final : public engine {
     int w_h;
     int w_w;
     int t_size;
-    //    texture tex;
+    texture* tex;
 
     GLuint vao, vbo;
 
@@ -520,11 +520,12 @@ class engine_impl final : public engine {
         shader_program = create_shader_program(vertex_shader, fragment_shader);
         glUseProgram(shader_program);
 
-        //        if (!tex.load_texture("brick.png")) {
-        //            return EXIT_FAILURE;
-        //        }
-        //
-        //        std::cerr << "texture loaded" << std::endl;
+        tex = new texture();
+        if (!tex->load_texture("brick.png")) {
+            return EXIT_FAILURE;
+        }
+
+        std::cerr << "texture loaded" << std::endl;
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -554,7 +555,7 @@ class engine_impl final : public engine {
             vertex_buffer.insert(vertex_buffer.end(), f);
     }
 
-    void draw(texture* tex) final {
+    void draw(texture* text) final {
         glUseProgram(shader_program);
 
         tex->bind();
@@ -606,7 +607,7 @@ class engine_impl final : public engine {
         glDrawArrays(GL_TRIANGLES, 0, vertex_buffer.size() / STRIDE_ELEMENTS);
         GL_unbind();
         vertex_buffer.clear();
-        tex->unbind();
+        //        tex->unbind();
     }
 
     void CHL_exit() final {
