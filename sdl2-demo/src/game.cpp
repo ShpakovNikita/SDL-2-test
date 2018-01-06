@@ -8,9 +8,13 @@
 #include <math.h>
 #include <cstdlib>
 #include <time.h>
+#include <chrono>
+#include <thread>
 
 #include "headers/engine.hxx"
 #include "dungeon.cpp"
+
+#include "headers/bullet.h"
 
 enum class mode { draw, look, idle };
 
@@ -23,10 +27,19 @@ const std::string MOVE_SOUND = "move.wav";
 const std::string VERTEX_FILE = "vertices.txt";
 const std::string SIN_FILE = "sin.txt";
 
-constexpr int WINDOW_WIDTH = 1024;
-constexpr int WINDOW_HEIGHT = 640;
+constexpr int WINDOW_WIDTH = 1536;
+constexpr int WINDOW_HEIGHT = 960;
 
-constexpr int TILE_SIZE = 32;
+constexpr int TILE_SIZE = 64;
+
+constexpr int FPS = 60;
+
+constexpr int P_SPEED = 8;
+
+template <typename T>
+int sign(T val) {
+    return (T(0) < val) - (val < T(0));
+}
 
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
@@ -34,6 +47,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                                                    destroy_engine);
 
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE);
+
+    int k = -1;
 
     texture* brick_tex = new texture();
     if (!brick_tex->load_texture("brick.png"))
@@ -43,25 +58,29 @@ int main(int /*argc*/, char* /*argv*/ []) {
     if (!player_tex->load_texture("hero.png"))
         std::cerr << "Texture not found!" << std::endl;
 
+    texture* floor_tex = new texture();
+    if (!floor_tex->load_texture("tiles.png"))
+        std::cerr << "Texture not found!" << std::endl;
+
     std::ifstream fin(VERTEX_FILE);
     assert(!!fin);
 
     triangle t_arr[2];
     fin >> t_arr[0] >> t_arr[1];
-
-    mode current_mode = mode::idle;
-
-    bool keys[17];
-    for (int i = 0; i < 17; i++)
-        keys[i] = false;
-
     std::vector<float> data;
     for (auto t : t_arr)
         convert_triangle(t, data);
 
-    std::vector<instance*> bricks;
+    mode current_mode = mode::idle;
 
-    int x_size = 34, y_size = 20;
+    bool keys[18];
+    for (int i = 0; i < 18; i++)
+        keys[i] = false;
+
+    std::vector<instance*> bricks;
+    std::vector<instance*> bullets;
+
+    int x_size = WINDOW_WIDTH / TILE_SIZE, y_size = WINDOW_HEIGHT / TILE_SIZE;
     DungeonGenerator generator(x_size, y_size);
     auto map = generator.Generate();
     std::vector<int> tile_set = map.Print();
@@ -71,7 +90,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     bool placed = false;
     std::unique_ptr<life_form, void (*)(life_form*)> player(
-        create_player(data, 0.0f, 0.0f, 0.0f), destroy_player);
+        create_player(data, 0.0f, 0.0f, 0.0f, P_SPEED, TILE_SIZE),
+        destroy_player);
 
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
@@ -79,7 +99,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
             if (*(tile_set.begin() + y * x_size + x) != 0)
                 bricks.insert(bricks.end(),
                               create_wall(data, -X_MAP + 2 * x + 1,
-                                          -Y_MAP + 2 * y + 1, 0.0f));
+                                          -Y_MAP + 2 * y + 1, 0.0f, TILE_SIZE));
             else if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
                 std::cout << *(tile_set.begin() + y * x_size + x) << std::endl;
                 player->position.x = -X_MAP + 2 * x + 1;
@@ -88,6 +108,15 @@ int main(int /*argc*/, char* /*argv*/ []) {
             }
         }
         std::cout << std::endl;
+    }
+
+    std::vector<instance*> floor;
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++) {
+            floor.insert(floor.end(),
+                         create_wall(data, -X_MAP + 2 * x + 1,
+                                     -Y_MAP + 2 * y + 1, 0.0f, TILE_SIZE));
+        }
     }
 
     //    bricks.insert(bricks.end(),
@@ -106,7 +135,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     data.clear();
 
-    int speed = 4;
+    float alpha = 0;
+
     float prev_frame = eng->GL_time();
     bool quit = false;
     while (!quit) {
@@ -129,6 +159,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 case event::button1_pressed:
                     current_mode = mode::idle;
                     break;
+                case event::left_mouse_pressed:
+                    bullets.insert(
+                        bullets.end(),
+                        new bullet(data, player->position.x, player->position.y,
+                                   0.0f, 16, 0, 2));
+                    break;
                 default:
                     break;
             }
@@ -142,24 +178,49 @@ int main(int /*argc*/, char* /*argv*/ []) {
             }
         }
 
+        /*calculate angle*/
+        int dx = eng->get_mouse_pos().x -
+                 (player->position.x + x_size) / 2 / x_size * WINDOW_WIDTH;
+        int dy = (player->position.y + y_size) / 2 / y_size * WINDOW_HEIGHT -
+                 eng->get_mouse_pos().y;
+
+        float alpha = 0;
+        if (dx >= 0 && dy >= 0)
+            alpha = std::atan((float)dy / dx);
+        else if (dx >= 0 && dy < 0)
+            alpha = std::atan((float)dy / dx) + 2 * M_PI;
+        else
+            alpha = M_PI + std::atan((float)dy / dx);
+
+        std::cout << alpha << std::endl;
+
+        /*smooth moving*/
         bool moved = false;
         float delta_x = 0;
         float delta_y = 0;
         if (keys[static_cast<int>(event::left_pressed)]) {
             moved = true;
-            delta_x = -speed * delta_time;
+            delta_x = -player->speed * delta_time;
         }
         if (keys[static_cast<int>(event::right_pressed)]) {
             moved = true;
-            delta_x = speed * delta_time;
+            delta_x = player->speed * delta_time;
         }
         if (keys[static_cast<int>(event::up_pressed)]) {
             moved = true;
-            delta_y = -speed * delta_time;
+            delta_y = -player->speed * delta_time;
         }
         if (keys[static_cast<int>(event::down_pressed)]) {
             moved = true;
-            delta_y = speed * delta_time;
+            delta_y = player->speed * delta_time;
+        }
+
+        if (delta_x != 0 && delta_y != 0) {
+            delta_x = delta_x / std::sqrt(2);
+            delta_y = sign(delta_y) * std::fabs(delta_x);
+        } else if (delta_x == 0 && delta_y == 0) {
+            /*delta_y = (float)k * 4 / TILE_SIZE;*/
+            k *= -1;
         }
 
         player->position.x += delta_x;
@@ -197,6 +258,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
         /* draw sprites */
         eng->GL_clear_color();
 
+        for (auto tile : floor)
+            eng->add_object(tile);
+
+        eng->draw(floor_tex);
+
         for (auto brick : bricks)
             eng->add_object(brick);
 
@@ -208,6 +274,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
         data.clear();
 
         eng->GL_swap_buffers();
+
+        /*sleep*/
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / FPS));
     }
 
     eng->CHL_exit();

@@ -36,6 +36,8 @@ enum class event {
     button1_released,
     button2_pressed,
     button2_released,
+    /// mouse events
+    left_mouse_pressed,
     /// virtual console events
     turn_off
 };
@@ -110,8 +112,7 @@ class texture {
 
 class instance {
    public:
-    virtual int render_instance() = 0;
-    instance(std::vector<float>, float x, float y, float z);
+    instance(std::vector<float>, float x, float y, float z, int size);
     virtual ~instance();
 
     vertex_2d position;
@@ -126,14 +127,24 @@ class instance {
 
 class life_form : public instance {
    public:
-    life_form(std::vector<float>, float x, float y, float z, int speed);
+    life_form(std::vector<float>, float x, float y, float z, int _speed, int s);
     virtual ~life_form();
     virtual void move() = 0;
+    int speed;
 };
-life_form* create_player(std::vector<float>, float x, float y, float z);
+life_form* create_player(std::vector<float>,
+                         float x,
+                         float y,
+                         float z,
+                         int _speed,
+                         int size);
 void destroy_player(life_form*);
 
-instance* create_wall(std::vector<float> data, float x, float y, float z);
+instance* create_wall(std::vector<float> data,
+                      float x,
+                      float y,
+                      float z,
+                      int size);
 
 class sound {
    public:
@@ -163,6 +174,7 @@ class engine {
     virtual int CHL_init(int, int, int) = 0;
     virtual bool read_input(event&) = 0;
     virtual void CHL_exit() = 0;
+    virtual point get_mouse_pos() = 0;
     virtual void add_object(instance*) = 0;
     virtual void draw(texture*) = 0;
     //    virtual bool load_texture(std::string) = 0;

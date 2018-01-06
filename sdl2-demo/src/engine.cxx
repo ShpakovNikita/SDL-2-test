@@ -102,13 +102,15 @@ struct bind {
     event event_released;
 };
 
-static std::array<std::string, 17> event_names = {
+static std::array<std::string, 18> event_names = {
     /// input events
     "left_pressed", "left_released", "right_pressed", "right_released",
     "up_pressed", "up_released", "down_pressed", "down_released",
     "select_pressed", "select_released", "start_pressed", "start_released",
     "button1_pressed", "button1_released", "button2_pressed",
     "button2_released",
+    /// mouse events
+    "left_mouse_pressed",
     /// virtual console events
     "turn_off"};
 
@@ -230,30 +232,34 @@ bool check_collision(instance* one,
     // Collision x-axis?
     float precision = 1.0f / t_size;
 
-    bool collisionX = one->position.x - 1 + one->size.x / t_size * 2 >
-                          two->position.x - 1 + precision &&
-                      two->position.x - 1 + two->size.x / t_size * 2 >
-                          one->position.x - 1 + precision;
+    bool collisionX = one->position.x + one->size.x / t_size >
+                          two->position.x - one->size.y / t_size + precision &&
+                      two->position.x + two->size.x / t_size >
+                          one->position.x - one->size.y / t_size + precision;
     // Collision y-axis?
     //    bool collisionY = one->position.y - 1 + one->size.y / t_size * 2 >
     //                          two->position.y - 1 + precision &&
     //                      two->position.y - 1 + two->size.y / t_size * 2 >
     //                          one->position.y - 1 + precision;
 
-    bool collisionY = one->position.y - 1 + one->size.y / t_size * 2 >
-                          two->position.y - 1 + precision &&
-                      two->position.y - 2 + two->size.y / t_size * 2 >
-                          one->position.y - 1 + precision;
+    bool collisionY =
+        one->position.y + one->size.y / t_size >
+            two->position.y - one->size.y / t_size + precision &&
+        two->position.y > one->position.y - one->size.y / t_size + precision;
     // Collision only if on both axes
 
     return collisionX && collisionY;
 }
 
-instance::instance(std::vector<float> coords, float x, float y, float z) {
+instance::instance(std::vector<float> coords,
+                   float x,
+                   float y,
+                   float z,
+                   int s) {
     data = coords;
     position = vertex_2d(x, y, 0.0f, 0.0f);
     position.z_index = z;
-    size = vertex_2d(32, 32, 0.0f, 0.0f);
+    size = vertex_2d(s, s, 0.0f, 0.0f);
 }
 
 point* instance::get_points() {
@@ -276,8 +282,11 @@ life_form::life_form(std::vector<float> coords,
                      float x,
                      float y,
                      float z,
-                     int speed)
-    : instance(coords, x, y, z) {}
+                     int _speed,
+                     int size)
+    : instance(coords, x, y, z, size) {
+    speed = _speed;
+}
 
 instance::~instance() {
     data.clear();
@@ -288,24 +297,29 @@ life_form::~life_form() {}
 class wall : public instance {
    private:
    public:
-    wall(std::vector<float> data, float x, float y, float z_index)
-        : instance(data, x, y, z_index) {}
-
-    int render_instance() { return 1; }
+    wall(std::vector<float> data, float x, float y, float z_index, int size)
+        : instance(data, x, y, z_index, size) {}
 };
 
-instance* create_wall(std::vector<float> data, float x, float y, float z) {
-    instance* inst = new wall(data, x, y, z);
+instance* create_wall(std::vector<float> data,
+                      float x,
+                      float y,
+                      float z,
+                      int size) {
+    instance* inst = new wall(data, x, y, z, size);
     return inst;
 }
 
 class player : public life_form {
    private:
    public:
-    player(std::vector<float> data, float x, float y, float z_index, int speed)
-        : life_form(data, x, y, z_index, speed) {}
-
-    int render_instance() { return 1; }
+    player(std::vector<float> data,
+           float x,
+           float y,
+           float z_index,
+           int speed,
+           int size)
+        : life_form(data, x, y, z_index, speed, size) {}
 
     std::vector<float> get_vector() {
         std::vector<float> v;
@@ -324,12 +338,17 @@ class player : public life_form {
 
 bool player_exist = false;
 
-life_form* create_player(std::vector<float> data, float x, float y, float z) {
+life_form* create_player(std::vector<float> data,
+                         float x,
+                         float y,
+                         float z,
+                         int _speed,
+                         int size) {
     if (player_exist) {
         throw std::runtime_error("player already exist");
     }
 
-    life_form* inst = new player(data, x, y, z, 1);
+    life_form* inst = new player(data, x, y, z, _speed, size);
     player_exist = true;
     return inst;
 }
@@ -354,6 +373,7 @@ class engine_impl final : public engine {
 
     int w_h;
     int w_w;
+    int _x = 0, _y = 0;
     GLuint vao, vbo;
 
     void GL_unbind() {
@@ -486,6 +506,8 @@ class engine_impl final : public engine {
         return EXIT_SUCCESS;
     }
 
+    point get_mouse_pos() final { return point(_x, _y); }
+
     void GL_swap_buffers() final { SDL_GL_SwapWindow(window); }
     void GL_clear_color() final {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -582,6 +604,17 @@ class engine_impl final : public engine {
                         return true;
                     }
                     break;
+                case SDL_MOUSEBUTTONDOWN:
+                    if (event.button.button == SDL_BUTTON_LEFT) {
+                        e = event::left_mouse_pressed;
+                        e_type = event_type::pressed;
+                        return true;
+                    }
+                    break;
+                case SDL_MOUSEMOTION: {
+                    _x = event.motion.x;
+                    _y = event.motion.y;
+                } break;
                 default:
                     break;
             }
@@ -648,5 +681,4 @@ static bool is_intersect(point* array_1, int len_1, point* array_2, int len_2) {
             break;
     return i == len_1;
 }
-
 }    // namespace CHL
