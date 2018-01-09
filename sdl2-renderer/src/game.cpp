@@ -129,7 +129,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     sound move_sound(SND_FOLDER + MOVE_SOUND);
     sound shot_sound(SND_FOLDER + "shot.wav");
     idle_sound.play_always();
-    start_music.play_always();
+    //    start_music.play_always();
 
     bool one_time_change = true;
 
@@ -164,12 +164,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     break;
                 case event::left_mouse_pressed:
                     if (delay <= 0) {
-                        bullets.insert(bullets.end(),
-                                       new bullet(data, player->position.x + 2,
-                                                  player->position.y - 0.5,
-                                                  0.0f, TILE_SIZE, 0, 2));
+                        bullets.insert(
+                            bullets.end(),
+                            new bullet(data, player->position.x + TILE_SIZE,
+                                       player->position.y - 10, 0.0f, 8, 0, 2));
                         shot_sound.play();
-                        delay = 0.5;
+                        delay = 0.7;
                     }
                     break;
                 default:
@@ -293,17 +293,19 @@ int main(int /*argc*/, char* /*argv*/ []) {
         for (auto brick : bricks)
             eng->add_object(brick);
 
-        eng->draw(brick_tex);
+        if (!bricks.empty())
+            eng->draw(bricks[0], brick_tex);
 
         for (auto bullet : bullets) {
-            bullet->position.x += 13 * delta_time;
+            bullet->position.x += 100 * delta_time;
             eng->add_object(bullet);
         }
 
-        eng->draw(bullet_tex);
+        if (!bullets.empty())
+            eng->draw(bullets[0], bullet_tex);
 
         eng->add_object(player.get());
-        eng->draw(player_tex);
+        eng->draw(player.get(), player_tex);
 
         eng->GL_swap_buffers();
 
