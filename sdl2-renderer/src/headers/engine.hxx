@@ -177,6 +177,7 @@ class engine {
     virtual point get_mouse_pos() = 0;
     virtual void add_object(instance*) = 0;
     virtual void draw(texture*) = 0;
+    virtual void set_virtual_pixel(int, int) = 0;
     //    virtual bool load_texture(std::string) = 0;
     virtual event_type get_event_type() = 0;
 };

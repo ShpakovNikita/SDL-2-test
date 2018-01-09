@@ -30,11 +30,11 @@ const std::string SIN_FILE = "sin.txt";
 constexpr int WINDOW_WIDTH = 1536;
 constexpr int WINDOW_HEIGHT = 960;
 
-constexpr int TILE_SIZE = 64;
+constexpr int TILE_SIZE = 16;
 
 constexpr int FPS = 60;
 
-constexpr int P_SPEED = 8;
+constexpr int P_SPEED = 32;
 
 template <typename T>
 int sign(T val) {
@@ -47,6 +47,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                                                    destroy_engine);
 
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE);
+    eng->set_virtual_pixel(WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4);
 
     int k = -1;
 
@@ -84,7 +85,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<instance*> bricks;
     std::vector<instance*> bullets;
 
-    int x_size = WINDOW_WIDTH / TILE_SIZE, y_size = WINDOW_HEIGHT / TILE_SIZE;
+    int x_size = WINDOW_WIDTH / 4 / TILE_SIZE,
+        y_size = WINDOW_HEIGHT / 4 / TILE_SIZE;
     DungeonGenerator generator(x_size, y_size);
     auto map = generator.Generate();
     std::vector<int> tile_set = map.Print();
@@ -94,20 +96,21 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     bool placed = false;
     std::unique_ptr<life_form, void (*)(life_form*)> player(
-        create_player(data, 0.0f, 0.0f, 0.0f, P_SPEED, TILE_SIZE),
+        create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE),
         destroy_player);
 
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
             std::cout << *(tile_set.begin() + y * x_size + x) << " ";
             if (*(tile_set.begin() + y * x_size + x) != 0)
-                bricks.insert(bricks.end(),
-                              create_wall(data, -X_MAP + 2 * x + 1,
-                                          -Y_MAP + 2 * y + 1, 0.0f, TILE_SIZE));
+                bricks.insert(
+                    bricks.end(),
+                    create_wall(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE,
+                                0.0f, TILE_SIZE));
             else if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
                 std::cout << *(tile_set.begin() + y * x_size + x) << std::endl;
-                player->position.x = -X_MAP + 2 * x + 1;
-                player->position.y = -Y_MAP + 2 * y + 1;
+                player->position.x = x * TILE_SIZE;
+                player->position.y = y * TILE_SIZE + 1;
                 placed = true;
             }
         }
@@ -117,14 +120,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<instance*> floor;
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
-            floor.insert(floor.end(),
-                         create_wall(data, -X_MAP + 2 * x + 1,
-                                     -Y_MAP + 2 * y + 1, 0.0f, TILE_SIZE));
+            floor.insert(floor.end(), create_wall(data, x, y, 0.0f, TILE_SIZE));
         }
     }
-
-    //    bricks.insert(bricks.end(),
-    //                  create_wall(data, -X_MAP + 1, -Y_MAP + 1, 0.0f));
 
     sound start_music(SND_FOLDER + START_MUSIC);
     sound idle_sound(SND_FOLDER + IDLE_SOUND);
@@ -169,7 +167,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                         bullets.insert(bullets.end(),
                                        new bullet(data, player->position.x + 2,
                                                   player->position.y - 0.5,
-                                                  0.0f, 16, 0, 2));
+                                                  0.0f, TILE_SIZE, 0, 2));
                         shot_sound.play();
                         delay = 0.5;
                     }
@@ -235,6 +233,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
             k *= -1;
         }
 
+        //        std::cout << player->position.x << " " << player->position.y
+        //                  << std::endl;
+
         player->position.x += delta_x;
         player->position.y += delta_y;
 
@@ -254,37 +255,40 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         /* check collisions */
-        for (instance* inst : bricks) {
-            if (check_collision(player.get(), inst, delta_time)) {
-                std::cout << "Collide!" << std::endl;
-                player->position.x -= delta_x;
-                while (check_collision(player.get(), inst, delta_time))
-                    player->position.y -= delta_y / TILE_SIZE * 2.0f;
-
-                player->position.x += delta_x;
-                while (check_collision(player.get(), inst, delta_time))
-                    player->position.x -= delta_x / TILE_SIZE * 2.0f;
-            }
-        }
-
-        int i = 0;
-        for (instance* b : bullets) {
-            for (instance* brick : bricks) {
-                if (check_collision(b, brick, delta_time)) {
-                    std::cout << "collide!" << std::endl;
-                    bullets.erase(bullets.begin() + i);
-                }
-            }
-            i++;
-        }
+        //        for (instance* inst : bricks) {
+        //            if (check_collision(player.get(), inst, delta_time)) {
+        //                std::cout << "Collide!" << std::endl;
+        //                player->position.x -= delta_x;
+        //                while (check_collision(player.get(), inst,
+        //                delta_time))
+        //                    player->position.y -= delta_y / TILE_SIZE * 2.0f;
+        //
+        //                player->position.x += delta_x;
+        //                while (check_collision(player.get(), inst,
+        //                delta_time))
+        //                    player->position.x -= delta_x / TILE_SIZE * 2.0f;
+        //            }
+        //        }
+        //
+        //        int i = 0;
+        //        for (instance* b : bullets) {
+        //            for (instance* brick : bricks) {
+        //                if (check_collision(b, brick, delta_time)) {
+        //                    std::cout << "collide!" << std::endl;
+        //                    delete *(bullets.begin() + i);    // delete
+        //                    reference bullets.erase(bullets.begin() + i);
+        //                }
+        //            }
+        //            i++;
+        //        }
 
         /* draw sprites */
         eng->GL_clear_color();
 
-        for (auto tile : floor)
-            eng->add_object(tile);
+        //        for (auto tile : floor)
+        //            eng->add_object(tile);
 
-        eng->draw(floor_tex);
+        //        eng->draw(floor_tex);
 
         for (auto brick : bricks)
             eng->add_object(brick);
