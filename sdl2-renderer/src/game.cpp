@@ -35,6 +35,7 @@ constexpr int TILE_SIZE = 16;
 constexpr int FPS = 60;
 
 constexpr int P_SPEED = 32;
+constexpr int B_SPEED = 100;
 
 template <typename T>
 int sign(T val) {
@@ -168,6 +169,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                             bullets.end(),
                             new bullet(data, player->position.x + TILE_SIZE,
                                        player->position.y - 10, 0.0f, 8, 0, 2));
+                        (*(bullets.end() - 1))->alpha = alpha;
                         shot_sound.play();
                         delay = 0.7;
                     }
@@ -189,20 +191,15 @@ int main(int /*argc*/, char* /*argv*/ []) {
             delay -= delta_time;
 
         /*calculate angle*/
-        int dx = eng->get_mouse_pos().x -
-                 (player->position.x + x_size) / 2 / x_size * WINDOW_WIDTH;
-        int dy = (player->position.y + y_size) / 2 / y_size * WINDOW_HEIGHT -
-                 eng->get_mouse_pos().y;
+        int dx = eng->get_mouse_pos().x - (player->position.x + TILE_SIZE / 2);
+        int dy = (player->position.y - TILE_SIZE / 2) - eng->get_mouse_pos().y;
 
-        float alpha = 0;
         if (dx >= 0 && dy >= 0)
             alpha = std::atan((float)dy / dx);
         else if (dx >= 0 && dy < 0)
             alpha = std::atan((float)dy / dx) + 2 * M_PI;
         else
             alpha = M_PI + std::atan((float)dy / dx);
-
-        //        std::cout << alpha << std::endl;
 
         /*smooth moving*/
         bool moved = false;
@@ -297,12 +294,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
             eng->draw(bricks[0], brick_tex);
 
         for (auto bullet : bullets) {
-            bullet->position.x += 100 * delta_time;
+            bullet->position.x += B_SPEED * delta_time;
             eng->add_object(bullet);
+            eng->draw(bullet, bullet_tex);
         }
 
-        if (!bullets.empty())
-            eng->draw(bullets[0], bullet_tex);
+        //        if (!bullets.empty())
+        //            eng->draw(bullets[0], bullet_tex);
 
         eng->add_object(player.get());
         eng->draw(player.get(), player_tex);
