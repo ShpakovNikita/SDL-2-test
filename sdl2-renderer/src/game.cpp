@@ -170,6 +170,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                             new bullet(data, player->position.x + TILE_SIZE,
                                        player->position.y - 10, 0.0f, 8, 0, 2));
                         (*(bullets.end() - 1))->alpha = alpha;
+                        (*(bullets.end() - 1))->rotation_point =
+                            point(player->position.x, player->position.y);
                         shot_sound.play();
                         delay = 0.7;
                     }

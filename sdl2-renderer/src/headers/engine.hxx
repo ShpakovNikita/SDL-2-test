@@ -119,6 +119,7 @@ class instance {
     vertex_2d size;
 
     float alpha = 0;
+    point rotation_point = point(0, 0);
 
     point* get_points();
     std::vector<float> get_vector();
