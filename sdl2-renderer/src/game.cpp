@@ -121,7 +121,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<instance*> floor;
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
-            floor.insert(floor.end(), create_wall(data, x, y, 0.0f, TILE_SIZE));
+            floor.insert(floor.end(), create_wall(data, x * TILE_SIZE,
+                                                  y * TILE_SIZE + TILE_SIZE,
+                                                  0.0f, TILE_SIZE));
         }
     }
 
@@ -157,9 +159,19 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 case event::select_pressed:
                     current_mode = mode::draw;
                     break;
-                case event::button1_pressed:
-                    quit = true;
-                    break;
+                case event::button1_pressed: {
+                    for (int i = 0; i < 32; i++) {
+                        bullets.insert(
+                            bullets.end(),
+                            new bullet(data, player->position.x + TILE_SIZE,
+                                       player->position.y - 8, 0.0f, 8, 0, 2));
+                        (*(bullets.end() - 1))->alpha = 2 * M_PI * i / 32.0f;
+                        (*(bullets.end() - 1))->rotation_point =
+                            point(player->position.x + TILE_SIZE / 2,
+                                  player->position.y - TILE_SIZE / 2);
+                    }
+                    shot_sound.play();
+                } break;
                 case event::start_pressed:
                     current_mode = mode::look;
                     break;
@@ -168,12 +180,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
                         bullets.insert(
                             bullets.end(),
                             new bullet(data, player->position.x + TILE_SIZE,
-                                       player->position.y - 10, 0.0f, 8, 0, 2));
+                                       player->position.y - 8, 0.0f, 8, 0, 2));
                         (*(bullets.end() - 1))->alpha = alpha;
                         (*(bullets.end() - 1))->rotation_point =
-                            point(player->position.x, player->position.y);
+                            point(player->position.x + TILE_SIZE / 2,
+                                  player->position.y - TILE_SIZE / 2);
                         shot_sound.play();
-                        delay = 0.7;
+                        delay = 0;
                     }
                     break;
                 default:
@@ -284,10 +297,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
         /* draw sprites */
         eng->GL_clear_color();
 
-        //        for (auto tile : floor)
-        //            eng->add_object(tile);
+        for (auto tile : floor)
+            eng->add_object(tile);
 
-        //        eng->draw(floor_tex);
+        if (!floor.empty())
+            eng->draw(*floor.begin(), floor_tex);
 
         for (auto brick : bricks)
             eng->add_object(brick);
@@ -298,8 +312,10 @@ int main(int /*argc*/, char* /*argv*/ []) {
         for (auto bullet : bullets) {
             bullet->position.x += B_SPEED * delta_time;
             eng->add_object(bullet);
-            eng->draw(bullet, bullet_tex);
         }
+
+        if (!bullets.empty())
+            eng->draw(bullets[0], bullet_tex);
 
         //        if (!bullets.empty())
         //            eng->draw(bullets[0], bullet_tex);

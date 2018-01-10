@@ -293,7 +293,6 @@ std::vector<float> instance::get_vector() {
 
             std::cout << std::endl;
             v[i + 1] -= position.y / t_size;
-            std::cout << alpha << std::endl;
         } else {
             v[i] += position.x / t_size;
             v[i + 1] -= position.y / t_size;
