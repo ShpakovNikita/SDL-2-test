@@ -99,6 +99,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::unique_ptr<life_form, void (*)(life_form*)> player(
         create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE),
         destroy_player);
+    player->collision_box.y = TILE_SIZE / 2;    // /2;
 
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
@@ -111,12 +112,25 @@ int main(int /*argc*/, char* /*argv*/ []) {
             else if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
                 std::cout << *(tile_set.begin() + y * x_size + x) << std::endl;
                 player->position.x = x * TILE_SIZE;
-                player->position.y = y * TILE_SIZE + 1;
+                player->position.y = y * TILE_SIZE + TILE_SIZE;
                 placed = true;
             }
         }
         std::cout << std::endl;
     }
+
+    //    bricks.insert(bricks.end(),
+    //                  create_wall(data, 1 * TILE_SIZE, 1 * TILE_SIZE +
+    //                  TILE_SIZE,
+    //                              0.0f, TILE_SIZE));
+    //    bricks.insert(bricks.end(),
+    //                  create_wall(data, 1 * TILE_SIZE, 2 * TILE_SIZE +
+    //                  TILE_SIZE,
+    //                              0.0f, TILE_SIZE));
+    //    bricks.insert(bricks.end(),
+    //                  create_wall(data, 1 * TILE_SIZE, 3 * TILE_SIZE +
+    //                  TILE_SIZE,
+    //                              0.0f, TILE_SIZE));
 
     std::vector<instance*> floor;
     for (int y = 0; y < y_size; y++) {
@@ -160,10 +174,10 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     current_mode = mode::draw;
                     break;
                 case event::button1_pressed: {
-                    for (int i = 0; i < 32; i++) {
+                    for (int i = 0; i < 33; i++) {
                         bullets.insert(
                             bullets.end(),
-                            new bullet(data, player->position.x + TILE_SIZE,
+                            new bullet(data, player->position.x + TILE_SIZE / 2,
                                        player->position.y - 8, 0.0f, 8, 0, 2));
                         (*(bullets.end() - 1))->alpha = 2 * M_PI * i / 32.0f;
                         (*(bullets.end() - 1))->speed = B_SPEED;
@@ -180,7 +194,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     if (delay <= 0) {
                         bullets.insert(
                             bullets.end(),
-                            new bullet(data, player->position.x + TILE_SIZE,
+                            new bullet(data, player->position.x + TILE_SIZE / 2,
                                        player->position.y - 8, 0.0f, 8, 0, 2));
                         (*(bullets.end() - 1))->alpha = alpha;
                         (*(bullets.end() - 1))->speed = B_SPEED;
@@ -269,29 +283,34 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         /* check collisions */
-        //        for (instance* inst : bricks) {
-        //            if (check_collision(player.get(), inst, delta_time)) {
-        //                std::cout << "Collide!" << std::endl;
-        //                player->position.x -= delta_x;
-        //                while (check_collision(player.get(), inst,
-        //                delta_time))
-        //                    player->position.y -= delta_y / TILE_SIZE * 2.0f;
-        //
-        //                player->position.x += delta_x;
-        //                while (check_collision(player.get(), inst,
-        //                delta_time))
-        //                    player->position.x -= delta_x / TILE_SIZE * 2.0f;
-        //            }
-        //        }
+        for (instance* inst : bricks) {
+            if (check_collision(player.get(), inst)) {
+                std::cout << "Collide!" << std::endl;
+                player->position.x -= delta_x;
+                while (check_collision(player.get(), inst))
+                    player->position.y -= delta_y / 4;
+
+                player->position.x += delta_x;
+                while (check_collision(player.get(), inst))
+                    player->position.x -= delta_x / 4;
+            }
+        }
+
         //
         //        int i = 0;
         //        for (instance* b : bullets) {
+        //            //        	b->update_points();
         //            for (instance* brick : bricks) {
-        //                if (check_collision(b, brick, delta_time)) {
+        //                if (check_slow_collision(b, brick, delta_time)) {
         //                    std::cout << "collide!" << std::endl;
-        //                    delete *(bullets.begin() + i);    // delete
-        //                    reference bullets.erase(bullets.begin() + i);
+        //
+        //                    // bullets.erase(bullets.begin() + i);
         //                }
+        //            }
+        //            if (b->position.x < 0 || b->position.x > WINDOW_WIDTH / 4
+        //            ||
+        //                b->position.y < 0 || b->position.y > WINDOW_HEIGHT /
+        //                4) { bullets.erase(bullets.begin() + i);
         //            }
         //            i++;
         //        }
@@ -311,7 +330,10 @@ int main(int /*argc*/, char* /*argv*/ []) {
         if (!bricks.empty())
             eng->draw(bricks[0], brick_tex);
 
+        int i = 0;
         for (auto bullet : bullets) {
+            std::cout << "bullet " << i << std::endl;
+            i++;
             bullet->move(delta_time);
             eng->add_object(bullet);
         }

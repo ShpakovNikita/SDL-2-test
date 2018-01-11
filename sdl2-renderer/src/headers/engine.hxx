@@ -44,7 +44,8 @@ enum class event {
 
 struct point {
     point(int _x, int _y) : x(_x), y(_y) {}
-    int x, y;
+    point() : x(0.0f), y(0.0f) {}
+    float x, y;
 };
 
 struct vertex_2d {
@@ -88,11 +89,8 @@ void destroy_engine(engine* e);
 
 enum class event_type { pressed, released, other };
 
-bool check_collision(instance*, instance*, float);
-static bool is_intersect(vertex_2d* array_1,
-                         int len_1,
-                         vertex_2d* array_2,
-                         int len_2);
+bool check_collision(instance*, instance*);
+bool check_slow_collision(instance* one, instance* two);
 
 class texture {
    public:
@@ -120,6 +118,7 @@ class instance {
 
     float alpha = 0;
     point rotation_point = point(0, 0);
+    point collision_box;
 
     point* get_points();
     std::vector<float> get_vector();

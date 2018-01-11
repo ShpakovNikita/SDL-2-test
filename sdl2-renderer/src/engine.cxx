@@ -226,28 +226,25 @@ engine::~engine() {
 int t_size;
 
 bool check_collision(instance* one,
-                     instance* two,
-                     float dt)    // AABB - AABB collision
+                     instance* two)    // AABB - AABB collision
 {
     // Collision x-axis?
-    float precision = 1.0f / t_size;
+    float precision = 0.15f;
 
-    bool collisionX = one->position.x + one->size.x / t_size >
-                          two->position.x - one->size.y / t_size + precision &&
-                      two->position.x + two->size.x / t_size >
-                          one->position.x - one->size.y / t_size + precision;
+    bool collisionX =
+        one->position.x + one->collision_box.x > two->position.x + precision &&
+        two->position.x + two->collision_box.x > one->position.x + precision;
     // Collision y-axis?
-    bool collisionY = one->position.y - 1 + one->size.y / t_size * 2 >
-                          two->position.y - 1 + precision &&
-                      two->position.y - 1 + two->size.y / t_size * 2 >
-                          one->position.y - 1 + precision;
+    bool collisionY =
+        one->position.y - one->collision_box.y < two->position.y - precision &&
+        two->position.y - two->collision_box.y < one->position.y - precision;
 
-    //    bool collisionY =
-    //        one->position.y + one->size.y / t_size >
-    //            two->position.y - one->size.y / t_size + precision &&
-    //        two->position.y > one->position.y - one->size.y / t_size +
-    //        precision;
-    //    // Collision only if on both axes
+    if (collisionY && collisionX) {
+        std::cout << one->position.y << " "
+                  << one->position.y + one->collision_box.y << " : "
+                  << two->position.y << " "
+                  << two->position.y + two->collision_box.y << std::endl;
+    }
 
     return collisionX && collisionY;
 }
@@ -261,6 +258,7 @@ instance::instance(std::vector<float> coords,
     position = vertex_2d(x, y, 0.0f, 0.0f);
     position.z_index = z;
     size = vertex_2d(s, s, 0.0f, 0.0f);
+    collision_box = point(s, s);
 }
 
 point* instance::get_points() {
@@ -707,7 +705,12 @@ void destroy_engine(engine* e) {
     delete e;
 }
 
-static bool is_intersect(point* array_1, int len_1, point* array_2, int len_2) {
+bool check_slow_collision(instance* one, instance* two) {
+    //	array_1, array_2 (points)
+    //			len_1, len_2 (int)
+    int len_1, len_2;
+    point array_1[len_1], array_2[len_2];
+
 #define vectP_z(v, a, b) \
     (((v).x - (a).x) * ((v).y - (b).y) - ((v).y - (a).y) * ((v).x - (b).x))
 
