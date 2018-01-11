@@ -84,7 +84,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         keys[i] = false;
 
     std::vector<instance*> bricks;
-    std::vector<instance*> bullets;
+    std::vector<bullet*> bullets;
 
     int x_size = WINDOW_WIDTH / 4 / TILE_SIZE,
         y_size = WINDOW_HEIGHT / 4 / TILE_SIZE;
@@ -166,6 +166,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                             new bullet(data, player->position.x + TILE_SIZE,
                                        player->position.y - 8, 0.0f, 8, 0, 2));
                         (*(bullets.end() - 1))->alpha = 2 * M_PI * i / 32.0f;
+                        (*(bullets.end() - 1))->speed = B_SPEED;
                         (*(bullets.end() - 1))->rotation_point =
                             point(player->position.x + TILE_SIZE / 2,
                                   player->position.y - TILE_SIZE / 2);
@@ -182,6 +183,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                             new bullet(data, player->position.x + TILE_SIZE,
                                        player->position.y - 8, 0.0f, 8, 0, 2));
                         (*(bullets.end() - 1))->alpha = alpha;
+                        (*(bullets.end() - 1))->speed = B_SPEED;
                         (*(bullets.end() - 1))->rotation_point =
                             point(player->position.x + TILE_SIZE / 2,
                                   player->position.y - TILE_SIZE / 2);
@@ -310,7 +312,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
             eng->draw(bricks[0], brick_tex);
 
         for (auto bullet : bullets) {
-            bullet->position.x += B_SPEED * delta_time;
+            bullet->move(delta_time);
             eng->add_object(bullet);
         }
 

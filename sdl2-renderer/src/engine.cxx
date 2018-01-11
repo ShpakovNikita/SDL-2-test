@@ -271,17 +271,17 @@ std::vector<float> instance::get_vector() {
     std::vector<float> v;
     v = data;
 
+    glm::mat4 transform;
+    transform = glm::rotate(transform,
+                            /*(GLfloat)GL_time() * */
+                            alpha, glm::vec3(0.0f, 0.0f, 1.0f));
+
     for (int i = 0; i < data.size(); i += STRIDE_ELEMENTS) {
         v[i] *= (size.x / t_size);
         v[i + 1] *= (size.y / t_size);
         if (alpha != 0) {
-            float delta = (position.x - rotation_point.x) / t_size;
-            v[i] += delta;
-
-            glm::mat4 transform;
-            transform = glm::rotate(transform,
-                                    /*(GLfloat)GL_time() * */
-                                    alpha, glm::vec3(0.0f, 0.0f, 1.0f));
+            //            float delta = (position.x - rotation_point.x) /
+            //            t_size; v[i] += delta;
 
             glm::vec4 vector =
                 glm::vec4(v[i], v[i + 1], 0.0f, 0.0f) * transform;
@@ -289,9 +289,9 @@ std::vector<float> instance::get_vector() {
             v[i] = vector.x;
             v[i + 1] = -vector.y;
 
-            v[i] += (float)rotation_point.x / t_size;
+            //            v[i] += (float)rotation_point.x / t_size;
 
-            std::cout << std::endl;
+            v[i] += position.x / t_size;
             v[i + 1] -= position.y / t_size;
         } else {
             v[i] += position.x / t_size;
