@@ -296,24 +296,28 @@ int main(int /*argc*/, char* /*argv*/ []) {
             }
         }
 
-        //
-        //        int i = 0;
-        //        for (instance* b : bullets) {
-        //            //        	b->update_points();
-        //            for (instance* brick : bricks) {
-        //                if (check_slow_collision(b, brick, delta_time)) {
-        //                    std::cout << "collide!" << std::endl;
-        //
-        //                    // bullets.erase(bullets.begin() + i);
-        //                }
-        //            }
-        //            if (b->position.x < 0 || b->position.x > WINDOW_WIDTH / 4
-        //            ||
-        //                b->position.y < 0 || b->position.y > WINDOW_HEIGHT /
-        //                4) { bullets.erase(bullets.begin() + i);
-        //            }
-        //            i++;
-        //        }
+        int i = 0;
+        for (instance* b : bullets) {
+            //        	b->update_points();
+            if (b->position.x + TILE_SIZE < 0 ||
+                b->position.x > WINDOW_WIDTH / 4 + TILE_SIZE ||
+                b->position.y + TILE_SIZE < 0 ||
+                b->position.y > WINDOW_HEIGHT / 4 + TILE_SIZE) {
+                delete *(bullets.begin() + i);
+                bullets.erase(bullets.begin() + i);
+                continue;
+            }
+            for (instance* brick : bricks) {
+                if (check_collision(b, brick)) {
+                    std::cout << "collide!" << std::endl;
+                    delete *(bullets.begin() + i);
+                    bullets.erase(bullets.begin() + i);
+                    i--;
+                    break;
+                }
+            }
+            i++;
+        }
 
         /* draw sprites */
         eng->GL_clear_color();
@@ -330,7 +334,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         if (!bricks.empty())
             eng->draw(bricks[0], brick_tex);
 
-        int i = 0;
+        i = 0;
         for (auto bullet : bullets) {
             std::cout << "bullet " << i << std::endl;
             i++;
