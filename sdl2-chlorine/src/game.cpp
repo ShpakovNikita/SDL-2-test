@@ -140,9 +140,19 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     /* place enemies */
     std::vector<enemy*> enemies;
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++) {
-            std::cout << *(tile_set.begin() + y * x_size + x) << " ";
+
+    int count = 0;
+    while (count < 1) {
+        int x = rand() % x_size;
+        int y = rand() % y_size;
+        if (*(tile_set.begin() + y * x_size + x) != 1) {
+            enemies.insert(
+                enemies.end(),
+                new enemy(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE, 0.0f,
+                          P_SPEED - 25, TILE_SIZE));
+            (*(enemies.end() - 1))->frames_in_texture = 4;
+            (*(enemies.end() - 1))->collision_box.y = TILE_SIZE / 2;
+            count++;
         }
     }
     sound start_music(SND_FOLDER + START_MUSIC);
@@ -314,6 +324,41 @@ int main(int /*argc*/, char* /*argv*/ []) {
             player->position.y > WINDOW_HEIGHT / 4)
             player->position.y -= delta_y;
 
+        /// enemy collision
+        for (enemy* e : enemies) {
+            e->move(delta_time);
+            e->destination.x = player->position.x;
+            e->destination.y = player->position.y;
+            for (instance* inst : bricks) {
+                if (check_collision(e, inst)) {
+                    std::cout << "Collide!" << std::endl;
+                    e->position.x -= e->delta_x;
+                    while (check_collision(e, inst))
+                        e->position.y -= e->delta_y / 4;
+
+                    e->position.x += delta_x;
+                    while (check_collision(e, inst))
+                        e->position.x -= e->delta_x / 4;
+                }
+            }
+            if (check_collision(e, player.get())) {
+                std::cout << "Collide!" << std::endl;
+                e->position.x -= e->delta_x;
+                player->position.x -= delta_x;
+                while (check_collision(e, player.get())) {
+                    e->position.y -= e->delta_y / 4;
+                    player->position.y -= delta_y / 4;
+                }
+
+                e->position.x += delta_x;
+                player->position.x += delta_x;
+                while (check_collision(e, player.get())) {
+                    e->position.x -= e->delta_x / 4;
+                    player->position.x -= delta_x;
+                }
+            }
+        }
+
         /// bullets collision
         int i = 0;
         for (instance* b : bullets) {
@@ -370,6 +415,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
         eng->add_object(player.get());
         eng->draw(player.get(), player_tex);
+
+        for (auto enemy : enemies) {
+            eng->add_object(enemy);
+        }
+        if (!enemies.empty())
+            eng->draw(enemies[0], player_tex);
 
         eng->GL_swap_buffers();
 
