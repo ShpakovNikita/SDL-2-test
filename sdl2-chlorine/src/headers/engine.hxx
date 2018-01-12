@@ -119,6 +119,8 @@ class instance {
     float alpha = 0;
     point rotation_point = point(0, 0);
     point collision_box;
+    int selected_frame = 0;
+    int frames_in_texture = 1;
     std::array<point, 4> mesh_points;
 
     std::array<point, 4> get_points();

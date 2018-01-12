@@ -271,16 +271,17 @@ std::array<point, 4> instance::get_points() {
                             /*(GLfloat)GL_time() * */
                             alpha, glm::vec3(0.0f, 0.0f, 1.0f));
 
+    float pixel_precision = 0.0f;
     v[0].x = 0;
     v[0].y = 0;
 
     v[1].x = 0;
-    v[1].y = -collision_box.y;
+    v[1].y = -collision_box.y + pixel_precision;
 
-    v[2].x = collision_box.x;
-    v[2].y = -collision_box.y;
+    v[2].x = collision_box.x - pixel_precision;
+    v[2].y = -collision_box.y + pixel_precision;
 
-    v[3].x = collision_box.x;
+    v[3].x = collision_box.x - pixel_precision;
     v[3].y = 0;
 
     for (int i = 0; i < 4; i++) {
@@ -303,6 +304,7 @@ void instance::update_points() {
 std::vector<float> instance::get_vector() {
     std::vector<float> v;
     v = data;
+    float k = 1.0f / frames_in_texture;
 
     glm::mat4 transform;
     transform = glm::rotate(transform,
@@ -325,6 +327,8 @@ std::vector<float> instance::get_vector() {
             v[i] += position.x / t_size;
             v[i + 1] -= position.y / t_size;
         }
+        v[i + 3] *= k;
+        v[i + 3] += k * (selected_frame % frames_in_texture);
     }
     return v;
 }

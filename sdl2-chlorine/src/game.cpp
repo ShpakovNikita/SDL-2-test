@@ -32,10 +32,10 @@ constexpr int WINDOW_HEIGHT = 960;
 
 constexpr int TILE_SIZE = 16;
 
-constexpr int FPS = 60;
+constexpr int FPS = 300;
 
 constexpr int P_SPEED = 32;
-constexpr int B_SPEED = 5;
+constexpr int B_SPEED = 65;
 
 template <typename T>
 int sign(T val) {
@@ -57,7 +57,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         std::cerr << "Texture not found!" << std::endl;
 
     texture* player_tex = new texture();
-    if (!player_tex->load_texture("hero.png"))
+    if (!player_tex->load_texture("tank.png"))
         std::cerr << "Texture not found!" << std::endl;
 
     texture* floor_tex = new texture();
@@ -100,16 +100,17 @@ int main(int /*argc*/, char* /*argv*/ []) {
         create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE),
         destroy_player);
     player->collision_box.y = TILE_SIZE / 2;    // /2;
+    player->frames_in_texture = 4;
 
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
             std::cout << *(tile_set.begin() + y * x_size + x) << " ";
-            if (*(tile_set.begin() + y * x_size + x) != 0)
+            if (*(tile_set.begin() + y * x_size + x) != 0) {
                 bricks.insert(
                     bricks.end(),
                     create_wall(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE,
                                 0.0f, TILE_SIZE));
-            else if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
+            } else if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
                 player->position.x = x * TILE_SIZE;
                 player->position.y = y * TILE_SIZE + TILE_SIZE;
                 placed = true;
@@ -124,6 +125,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
             floor.insert(floor.end(), create_wall(data, x * TILE_SIZE,
                                                   y * TILE_SIZE + TILE_SIZE,
                                                   0.0f, TILE_SIZE));
+            (*(floor.end() - 1))->frames_in_texture = 4;
+            (*(floor.end() - 1))->selected_frame = rand() % 4;
         }
     }
 
@@ -136,13 +139,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     bool one_time_change = true;
 
-    //    std::cout << tile_set[tile_set.size() - 1] << " "
-    //              << tile_set[tile_set.size() - 2] << std::endl;
-
     float alpha = 0;
 
     float delay = 0;
 
+    point shooting_point = point(14, -9);
     float prev_frame = eng->GL_time();
     bool quit = false;
     while (!quit) {
@@ -181,9 +182,10 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     if (delay <= 0) {
                         bullets.insert(
                             bullets.end(),
-                            new bullet(data, player->position.x + TILE_SIZE / 2,
-                                       player->position.y - TILE_SIZE / 2, 0.0f,
-                                       8, 0, 2));
+                            new bullet(data,
+                                       player->position.x + shooting_point.x,
+                                       player->position.y + shooting_point.y,
+                                       0.0f, 8, 0, 2));
                         (*(bullets.end() - 1))->alpha = alpha;
                         (*(bullets.end() - 1))->speed = B_SPEED;
                         (*(bullets.end() - 1))->rotation_point =
@@ -219,6 +221,20 @@ int main(int /*argc*/, char* /*argv*/ []) {
             alpha = std::atan((float)dy / dx) + 2 * M_PI;
         else
             alpha = M_PI + std::atan((float)dy / dx);
+
+        if (alpha > (3 * M_PI_2 + M_PI_4) || alpha <= M_PI_4) {
+            shooting_point = point(15, -8);
+            player->selected_frame = 0;
+        } else if (alpha > M_PI_4 && alpha <= M_PI_2 + M_PI_4) {
+            shooting_point = point(TILE_SIZE / 2 + 4, -TILE_SIZE);
+            player->selected_frame = 3;
+        } else if (alpha > M_PI_2 + M_PI_4 && alpha < M_PI + M_PI_4) {
+            shooting_point = point(1, -16);
+            player->selected_frame = 1;
+        } else {
+            shooting_point = point(TILE_SIZE / 2 - 4, -4);
+            player->selected_frame = 2;
+        }
 
         /*smooth moving*/
         bool moved = false;
@@ -283,6 +299,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
             }
         }
 
+        if (player->position.x < 0 || player->position.x > WINDOW_WIDTH / 4)
+            player->position.x -= delta_x;
+        if (player->position.y - TILE_SIZE < 0 ||
+            player->position.y > WINDOW_HEIGHT / 4)
+            player->position.y -= delta_y;
+
         /// bullets collision
         int i = 0;
         for (instance* b : bullets) {
@@ -333,16 +355,16 @@ int main(int /*argc*/, char* /*argv*/ []) {
         if (!bullets.empty())
             eng->draw(bullets[0], bullet_tex);
 
-        //        if (!bullets.empty())
-        //            eng->draw(bullets[0], bullet_tex);
-
         eng->add_object(player.get());
         eng->draw(player.get(), player_tex);
 
         eng->GL_swap_buffers();
 
         /*sleep*/
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000 / FPS));
+        float time = (eng->GL_time() - prev_frame) * 1000;
+        if (time < 1000 / FPS)
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(1000 / FPS - (int)time));
     }
 
     eng->CHL_exit();
