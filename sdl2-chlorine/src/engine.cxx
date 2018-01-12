@@ -229,7 +229,7 @@ bool check_collision(instance* one,
                      instance* two)    // AABB - AABB collision
 {
     // Collision x-axis?
-    float precision = 0.15f;
+    float precision = 0.1f;
 
     bool collisionX =
         one->position.x + one->collision_box.x > two->position.x + precision &&
@@ -238,13 +238,6 @@ bool check_collision(instance* one,
     bool collisionY =
         one->position.y - one->collision_box.y < two->position.y - precision &&
         two->position.y - two->collision_box.y < one->position.y - precision;
-
-    if (collisionY && collisionX) {
-        std::cout << one->position.y << " "
-                  << one->position.y + one->collision_box.y << " : "
-                  << two->position.y << " "
-                  << two->position.y + two->collision_box.y << std::endl;
-    }
 
     return collisionX && collisionY;
 }
@@ -388,7 +381,7 @@ class player : public life_form {
         return v;
     }
 
-    void move() final {}
+    void move(float dt) override {}
 };
 
 bool player_exist = false;
@@ -743,14 +736,18 @@ float triangle_area(point a, point b, point c) {
     return (a.x - c.x) * (b.y - c.y) - (a.y - c.y) * (b.x - c.x);
 }
 
-bool line_intersect(point a, point b, point c, point d) {
+bool line_intersect(point a, point b, point c, point d, point* p) {
     float a1 = triangle_area(a, b, d);
     float a2 = triangle_area(a, b, c);
 
+    float t;
     if (a1 * a2 < 0.0f) {
         float a3 = triangle_area(c, d, a);
         float a4 = a3 + a2 - a1;
         if (a3 * a4 < 0.0f) {
+            t = a3 / (a3 - a4);
+            p->x = a.x + t * (b.x - a.x);
+            p->y = a.y + t * (b.y - a.y);
             return true;
         }
     }
@@ -758,16 +755,29 @@ bool line_intersect(point a, point b, point c, point d) {
     return false;
 }
 
-bool check_slow_collision(instance* one, instance* two) {
+bool check_slow_collision(instance* one, instance* two, point* intersection_p) {
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            if (line_intersect(
-                    one->mesh_points[i], one->mesh_points[(i + 1) % 4],
-                    two->mesh_points[j], two->mesh_points[(j + 1) % 4])) {
+            if (line_intersect(one->mesh_points[i],
+                               one->mesh_points[(i + 1) % 4],
+                               two->mesh_points[j],
+                               two->mesh_points[(j + 1) % 4], intersection_p)) {
                 return true;
             }
         }
     }
     return false;
+}
+
+float get_direction(float x1, float y1, float x2, float y2) {
+    float dx = x1 - x2;
+    float dy = y2 - y1;
+
+    if (dx >= 0 && dy >= 0)
+        return std::atan((float)dy / dx);
+    else if (dx >= 0 && dy < 0)
+        return (std::atan((float)dy / dx) + 2 * M_PI);
+    else
+        return (M_PI + std::atan((float)dy / dx));
 }
 }    // namespace CHL

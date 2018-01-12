@@ -15,6 +15,7 @@
 #include "dungeon.cpp"
 
 #include "headers/bullet.h"
+#include "headers/enemy.h"
 
 enum class mode { draw, look, idle };
 
@@ -52,6 +53,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     int k = -1;
 
+    /* loading textures */
     texture* brick_tex = new texture();
     if (!brick_tex->load_texture("brick.png"))
         std::cerr << "Texture not found!" << std::endl;
@@ -66,6 +68,10 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     texture* bullet_tex = new texture();
     if (!bullet_tex->load_texture("bullet.png"))
+        std::cerr << "Texture not found!" << std::endl;
+
+    texture* explosion_tex = new texture();
+    if (!explosion_tex->load_texture("explosion-1.png"))
         std::cerr << "Texture not found!" << std::endl;
 
     std::ifstream fin(VERTEX_FILE);
@@ -97,11 +103,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     bool placed = false;
     std::unique_ptr<life_form, void (*)(life_form*)> player(
-        create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE),
+        create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE - 1),
         destroy_player);
     player->collision_box.y = TILE_SIZE / 2;    // /2;
     player->frames_in_texture = 4;
 
+    /* generate dungeon and place character */
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
             std::cout << *(tile_set.begin() + y * x_size + x) << " ";
@@ -119,6 +126,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         std::cout << std::endl;
     }
 
+    /* load background */
     std::vector<instance*> floor;
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
@@ -130,6 +138,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
     }
 
+    /* place enemies */
+    std::vector<enemy*> enemies;
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++) {
+            std::cout << *(tile_set.begin() + y * x_size + x) << " ";
+        }
+    }
     sound start_music(SND_FOLDER + START_MUSIC);
     sound idle_sound(SND_FOLDER + IDLE_SOUND);
     sound move_sound(SND_FOLDER + MOVE_SOUND);
@@ -212,15 +227,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
             delay -= delta_time;
 
         /*calculate angle*/
-        int dx = eng->get_mouse_pos().x - (player->position.x + TILE_SIZE / 2);
-        int dy = (player->position.y - TILE_SIZE / 2) - eng->get_mouse_pos().y;
-
-        if (dx >= 0 && dy >= 0)
-            alpha = std::atan((float)dy / dx);
-        else if (dx >= 0 && dy < 0)
-            alpha = std::atan((float)dy / dx) + 2 * M_PI;
-        else
-            alpha = M_PI + std::atan((float)dy / dx);
+        alpha = get_direction(eng->get_mouse_pos().x, eng->get_mouse_pos().y,
+                              player->position.x + TILE_SIZE / 2,
+                              player->position.y - TILE_SIZE / 2);
 
         if (alpha > (3 * M_PI_2 + M_PI_4) || alpha <= M_PI_4) {
             shooting_point = point(15, -8);
@@ -318,9 +327,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
             }
 
             b->update_points();
+            point* intersection_point = new point();
             for (instance* brick : bricks) {
-                if (check_slow_collision(b, brick)) {
+                if (check_slow_collision(b, brick, intersection_point)) {
                     std::cout << "Collide" << std::endl;
+
+                    std::cout << intersection_point->x << " "
+                              << intersection_point->y << std::endl;
 
                     delete *(bullets.begin() + i);
                     bullets.erase(bullets.begin() + i);

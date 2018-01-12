@@ -90,7 +90,9 @@ void destroy_engine(engine* e);
 enum class event_type { pressed, released, other };
 
 bool check_collision(instance*, instance*);
-bool check_slow_collision(instance* one, instance* two);
+bool check_slow_collision(instance* one, instance* two, point*);
+
+float get_direction(float x1, float y1, float x2, float y2);
 
 class texture {
    public:
@@ -136,7 +138,7 @@ class life_form : public instance {
    public:
     life_form(std::vector<float>, float x, float y, float z, int _speed, int s);
     virtual ~life_form();
-    virtual void move() = 0;
+    virtual void move(float) = 0;
     int speed;
 };
 life_form* create_player(std::vector<float>,
