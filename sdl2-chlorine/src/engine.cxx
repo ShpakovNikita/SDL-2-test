@@ -223,7 +223,7 @@ engine::~engine() {
     SDL_Quit();
 }
 
-int t_size;
+static int t_size;
 
 bool check_collision(instance* one,
                      instance* two)    // AABB - AABB collision

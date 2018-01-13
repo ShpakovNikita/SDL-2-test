@@ -16,6 +16,7 @@
 
 #include "headers/bullet.h"
 #include "headers/enemy.h"
+#include "headers/special_effect.h"
 
 enum class mode { draw, look, idle };
 
@@ -33,7 +34,7 @@ constexpr int WINDOW_HEIGHT = 960;
 
 constexpr int TILE_SIZE = 16;
 
-constexpr int FPS = 300;
+constexpr int FPS = 60;
 
 constexpr int P_SPEED = 32;
 constexpr int B_SPEED = 65;
@@ -142,7 +143,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<enemy*> enemies;
 
     int count = 0;
-    while (count < 1) {
+    int num = 10000;
+    while (count < 10 && num > 0) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
@@ -154,6 +156,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
             (*(enemies.end() - 1))->collision_box.y = TILE_SIZE / 2;
             count++;
         }
+        num--;
     }
     sound start_music(SND_FOLDER + START_MUSIC);
     sound idle_sound(SND_FOLDER + IDLE_SOUND);
@@ -171,6 +174,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
     point shooting_point = point(14, -9);
     float prev_frame = eng->GL_time();
     bool quit = false;
+
+    std::vector<special_effect*> se;
+
     while (!quit) {
         float delta_time = eng->GL_time() - prev_frame;
         prev_frame = eng->GL_time();
@@ -185,21 +191,26 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 case event::select_pressed:
                     current_mode = mode::draw;
                     break;
-                case event::button1_pressed: {
-                    for (int i = 0; i < 33; i++) {
-                        bullets.insert(
-                            bullets.end(),
-                            new bullet(data, player->position.x + TILE_SIZE / 2,
-                                       player->position.y - TILE_SIZE / 2, 0.0f,
-                                       8, 0, 2));
-                        (*(bullets.end() - 1))->alpha = 2 * M_PI * i / 32.0f;
-                        (*(bullets.end() - 1))->speed = B_SPEED;
-                        (*(bullets.end() - 1))->rotation_point =
-                            point(player->position.x + TILE_SIZE / 2,
-                                  player->position.y - TILE_SIZE / 2);
+                case event::button1_pressed:
+                    if (delay <= 0) {
+                        for (int i = 0; i < 33; i++) {
+                            bullets.insert(
+                                bullets.end(),
+                                new bullet(data,
+                                           player->position.x + TILE_SIZE / 2,
+                                           player->position.y - TILE_SIZE / 2,
+                                           0.0f, 8, 0, 2));
+                            (*(bullets.end() - 1))->alpha =
+                                2 * M_PI * i / 32.0f;
+                            (*(bullets.end() - 1))->speed = B_SPEED;
+                            (*(bullets.end() - 1))->rotation_point =
+                                point(player->position.x + TILE_SIZE / 2,
+                                      player->position.y - TILE_SIZE / 2);
+                            delay = 0.2;
+                        }
+                        shot_sound.play();
                     }
-                    shot_sound.play();
-                } break;
+                    break;
                 case event::start_pressed:
                     current_mode = mode::look;
                     break;
@@ -331,7 +342,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
             e->destination.y = player->position.y;
             for (instance* inst : bricks) {
                 if (check_collision(e, inst)) {
-                    std::cout << "Collide!" << std::endl;
+                    //                    std::cout << "Collide!" << std::endl;
                     e->position.x -= e->delta_x;
                     while (check_collision(e, inst))
                         e->position.y -= e->delta_y / 4;
@@ -342,7 +353,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 }
             }
             if (check_collision(e, player.get())) {
-                std::cout << "Collide!" << std::endl;
+                //                std::cout << "Collide!" << std::endl;
                 e->position.x -= e->delta_x;
                 player->position.x -= delta_x;
                 while (check_collision(e, player.get())) {
@@ -373,21 +384,57 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
             b->update_points();
             point* intersection_point = new point();
+            for (int j = 0; j < enemies.size(); j++) {
+                enemies[j]->update_points();
+                if (check_slow_collision(b, enemies[j], intersection_point)) {
+                    delete *(bullets.begin() + i);
+                    bullets.erase(bullets.begin() + i);
+
+                    delete *(enemies.begin() + j);
+                    enemies.erase(enemies.begin() + j);
+
+                    se.insert(se.end(),
+                              new special_effect(
+                                  data, intersection_point->x - TILE_SIZE / 2,
+                                  intersection_point->y + TILE_SIZE / 2, 0.0f,
+                                  TILE_SIZE));
+                    (*(se.end() - 1))->frames_in_texture = 8;
+
+                    i--;
+                    goto mark;
+                }
+            }
+
             for (instance* brick : bricks) {
                 if (check_slow_collision(b, brick, intersection_point)) {
-                    std::cout << "Collide" << std::endl;
-
-                    std::cout << intersection_point->x << " "
-                              << intersection_point->y << std::endl;
+                    //                    std::cout << intersection_point->x <<
+                    //                    " "
+                    //                              << intersection_point->y <<
+                    //                              std::endl;
 
                     delete *(bullets.begin() + i);
                     bullets.erase(bullets.begin() + i);
+
+                    se.insert(se.end(),
+                              new special_effect(
+                                  data, intersection_point->x - TILE_SIZE / 2,
+                                  intersection_point->y + TILE_SIZE / 2, 0.0f,
+                                  TILE_SIZE));
+                    (*(se.end() - 1))->frames_in_texture = 8;
+
                     i--;
                     break;
                 }
             }
-
+        mark:
             i++;
+        }
+
+        for (int j = 0; j < se.size(); j++) {
+            if (se[j]->end()) {
+                delete *(se.begin() + j);
+                se.erase(se.begin() + j);
+            }
         }
 
         /* draw sprites */
@@ -403,7 +450,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
             eng->add_object(brick);
 
         if (!bricks.empty())
-            eng->draw(bricks[0], brick_tex);
+            eng->draw(*bricks.begin(), brick_tex);
 
         for (auto bullet : bullets) {
             bullet->move(delta_time);
@@ -411,7 +458,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         if (!bullets.empty())
-            eng->draw(bullets[0], bullet_tex);
+            eng->draw(*bullets.begin(), bullet_tex);
 
         eng->add_object(player.get());
         eng->draw(player.get(), player_tex);
@@ -420,7 +467,15 @@ int main(int /*argc*/, char* /*argv*/ []) {
             eng->add_object(enemy);
         }
         if (!enemies.empty())
-            eng->draw(enemies[0], player_tex);
+            eng->draw(*enemies.begin(), player_tex);
+
+        for (auto effect : se) {
+            effect->update_frame();
+            eng->add_object(effect);
+        }
+
+        if (!se.empty())
+            eng->draw(*se.begin(), explosion_tex);
 
         eng->GL_swap_buffers();
 
