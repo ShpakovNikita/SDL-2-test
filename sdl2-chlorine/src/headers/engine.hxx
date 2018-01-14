@@ -10,6 +10,8 @@
 
 #define GLEW_BUILD
 
+#define MAX_DEPTH -10000
+#define MIN_DEPTH 10000
 #define STRIDE_ELEMENTS 5
 
 #include <vector>
@@ -49,11 +51,12 @@ struct point {
 };
 
 struct vertex_2d {
-    vertex_2d() : x(0.f), y(0.f), z_index(0.f), x_t(0.f), y_t(0.f) {}
+    vertex_2d() : x(0.f), y(0.f), z_index(0), x_t(0.f), y_t(0.f) {}
     vertex_2d(float _x, float _y, float _x_t, float _y_t)
-        : x(_x), y(_y), z_index(0.f), x_t(_x_t), y_t(_y_t) {}
+        : x(_x), y(_y), z_index(0), x_t(_x_t), y_t(_y_t) {}
 
-    float x, y, z_index;
+    float x, y;
+    int z_index;
     float x_t, y_t;
 };
 
@@ -93,6 +96,7 @@ bool check_collision(instance*, instance*);
 bool check_slow_collision(instance* one, instance* two, point*);
 
 float get_direction(float x1, float y1, float x2, float y2);
+bool ray_cast(const point&, const point&, const std::vector<instance*>& map);
 
 class texture {
    public:
@@ -122,7 +126,9 @@ class instance {
     point rotation_point = point(0, 0);
     point collision_box;
     int selected_frame = 0;
+    int selected_tileset = 0;
     int frames_in_texture = 1;
+    int tilesets_in_texture = 1;
     std::array<point, 4> mesh_points;
 
     std::array<point, 4> get_points();

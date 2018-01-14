@@ -72,7 +72,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         std::cerr << "Texture not found!" << std::endl;
 
     texture* explosion_tex = new texture();
-    if (!explosion_tex->load_texture("explosion-1.png"))
+    if (!explosion_tex->load_texture("explosion-6.png"))
         std::cerr << "Texture not found!" << std::endl;
 
     std::ifstream fin(VERTEX_FILE);
@@ -110,6 +110,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     player->frames_in_texture = 4;
 
     /* generate dungeon and place character */
+
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
             std::cout << *(tile_set.begin() + y * x_size + x) << " ";
@@ -117,15 +118,122 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 bricks.insert(
                     bricks.end(),
                     create_wall(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE,
-                                0.0f, TILE_SIZE));
+                                1.0f, TILE_SIZE));
             } else if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
                 player->position.x = x * TILE_SIZE;
                 player->position.y = y * TILE_SIZE + TILE_SIZE;
                 placed = true;
+                *(tile_set.begin() + y * x_size + x) = 1;
             }
         }
         std::cout << std::endl;
     }
+
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++) {
+        }
+    }
+
+    //    for (int yy = 0; yy < height * 2; yy++) {
+    //        for (var xx = 0; xx < width * 2; xx++) {
+    //            if (grid[#xx div 2, yy div 2] == FLOOR) {
+    //                // Get the tile's x and y
+    //                var tx = xx * tw;
+    //                var ty = yy * th;
+    //
+    //                var right = grid[#(xx + 1) div 2, yy div 2] != FLOOR;
+    //                var left = grid[#(xx - 1) div 2, yy div 2] != FLOOR;
+    //                var top = grid[#xx div 2, (yy - 1) div 2] != FLOOR;
+    //                var bottom = grid[#xx div 2, (yy + 1) div 2] != FLOOR;
+    //
+    //                var top_right = grid[#(xx + 1) div 2, (yy - 1) div 2] !=
+    //                FLOOR; var top_left = grid[#(xx - 1) div 2, (yy - 1) div
+    //                2] != FLOOR; var bottom_right =
+    //                    grid[#(xx + 1) div 2, (yy + 1) div 2] != FLOOR;
+    //                var bottom_left =
+    //                    grid[#(xx - 1) div 2, (yy + 1) div 2] != FLOOR;
+    //
+    //                if (right) {
+    //                    if (bottom) {
+    //                        tile_add(bg_walltiles, tw * 4, th * 1, tw, th, tx
+    //                        + tw,
+    //                                 ty, -ty);
+    //                    } else if (top) {
+    //                        if (top_right) {
+    //                            tile_add(bg_walltiles, tw * 4, th * 0, tw, th,
+    //                                     tx + tw, ty - th, -ty);
+    //                        } else {
+    //                            tile_add(bg_walltiles, tw * 3, th * 0, tw, th,
+    //                            tx,
+    //                                     ty - th, -ty);
+    //                        }
+    //                        tile_add(bg_walltiles, tw * 0, th * 1, tw, th, tx
+    //                        + tw,
+    //                                 ty, -ty);
+    //                    } else {
+    //                        tile_add(bg_walltiles, tw * 0, th * 1, tw, th, tx
+    //                        + tw,
+    //                                 ty, -ty);
+    //                    }
+    //                }
+    //
+    //                if (left) {
+    //                    if (bottom) {
+    //                        tile_add(bg_walltiles, tw * 3, th * 1, tw, th, tx
+    //                        - tw,
+    //                                 ty, -ty);
+    //                    } else if (top) {
+    //                        if (top_left) {
+    //                            tile_add(bg_walltiles, tw * 3, th * 0, tw, th,
+    //                                     tx - tw, ty - th, -ty);
+    //                        } else {
+    //                            tile_add(bg_walltiles, tw * 4, th * 0, tw, th,
+    //                            tx,
+    //                                     ty - th, -ty);
+    //                        }
+    //                        tile_add(bg_walltiles, tw * 2, th * 1, tw, th, tx
+    //                        - tw,
+    //                                 ty, -ty);
+    //                    } else {
+    //                        tile_add(bg_walltiles, tw * 2, th * 1, tw, th, tx
+    //                        - tw,
+    //                                 ty, -ty);
+    //                    }
+    //                }
+    //
+    //                if (top) {
+    //                    if (!top_right) {
+    //                        tile_add(bg_walltiles, tw * 2, th * 2, tw, th, tx,
+    //                                 ty - th, -ty);
+    //                    } else if (!top_left) {
+    //                        tile_add(bg_walltiles, tw * 0, th * 2, tw, th, tx,
+    //                                 ty - th, -ty);
+    //                    } else {
+    //                        tile_add(bg_walltiles, tw * 1, th * 2, tw, th, tx,
+    //                                 ty - th, -ty);
+    //                    }
+    //                }
+    //
+    //                if (bottom) {
+    //                    if (!bottom_right) {
+    //                        tile_add(bg_walltiles, tw * 2, th * 0, tw, th, tx,
+    //                        ty,
+    //                                 -ty - tw);
+    //                    } else if (!bottom_left) {
+    //                        tile_add(bg_walltiles, tw * 0, th * 0, tw, th, tx,
+    //                        ty,
+    //                                 -ty - tw);
+    //                    } else {
+    //                        tile_add(bg_walltiles, tw * 1, th * 0, tw, th, tx,
+    //                        ty,
+    //                                 -ty - tw);
+    //                    }
+    //                }
+    //            }
+    //        }
+    //    }
+
+    /* tiles selected */
 
     /* load background */
     std::vector<instance*> floor;
@@ -133,7 +241,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         for (int x = 0; x < x_size; x++) {
             floor.insert(floor.end(), create_wall(data, x * TILE_SIZE,
                                                   y * TILE_SIZE + TILE_SIZE,
-                                                  0.0f, TILE_SIZE));
+                                                  MAX_DEPTH, TILE_SIZE));
             (*(floor.end() - 1))->frames_in_texture = 4;
             (*(floor.end() - 1))->selected_frame = rand() % 4;
         }
@@ -143,8 +251,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<enemy*> enemies;
 
     int count = 0;
-    int num = 10000;
-    while (count < 10 && num > 0) {
+    while (count < 5) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
@@ -156,14 +263,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
             (*(enemies.end() - 1))->collision_box.y = TILE_SIZE / 2;
             count++;
         }
-        num--;
     }
     sound start_music(SND_FOLDER + START_MUSIC);
     sound idle_sound(SND_FOLDER + IDLE_SOUND);
     sound move_sound(SND_FOLDER + MOVE_SOUND);
     sound shot_sound(SND_FOLDER + "shot.wav");
     idle_sound.play_always();
-    //    start_music.play_always();
+    start_music.play_always();
 
     bool one_time_change = true;
 
@@ -206,7 +312,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                             (*(bullets.end() - 1))->rotation_point =
                                 point(player->position.x + TILE_SIZE / 2,
                                       player->position.y - TILE_SIZE / 2);
-                            delay = 0.2;
+                            delay = 1;
                         }
                         shot_sound.play();
                     }
@@ -228,7 +334,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                             point(player->position.x + TILE_SIZE / 2,
                                   player->position.y - TILE_SIZE / 2);
                         shot_sound.play();
-                        delay = 0;
+                        delay = 0.7;
                     }
                     break;
                 default:
@@ -237,9 +343,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
             if (eng->get_event_type() == event_type::pressed) {
                 keys[static_cast<int>(e)] = true;
-            }
-
-            else {
+            } else {
                 keys[static_cast<int>(e) - 1] = false;
             }
         }
@@ -297,6 +401,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
         player->position.x += delta_x;
         player->position.y += delta_y;
+        player->position.z_index = player->position.y;
 
         /* play music */
         if (moved && one_time_change) {
@@ -337,9 +442,15 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
         /// enemy collision
         for (enemy* e : enemies) {
+            e->position.z_index = e->position.y;
+            //            if (ray_cast(point(e->position.x, e->position.y),
+            //            e->destination,
+            //                         bricks))
+            //                std::cout << "cast" << std::endl;
+
             e->move(delta_time);
-            e->destination.x = player->position.x;
-            e->destination.y = player->position.y;
+            e->destination.x = player->position.x + TILE_SIZE / 2;
+            e->destination.y = player->position.y - TILE_SIZE / 2;
             for (instance* inst : bricks) {
                 if (check_collision(e, inst)) {
                     //                    std::cout << "Collide!" << std::endl;
@@ -396,8 +507,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     se.insert(se.end(),
                               new special_effect(
                                   data, intersection_point->x - TILE_SIZE / 2,
-                                  intersection_point->y + TILE_SIZE / 2, 0.0f,
-                                  TILE_SIZE));
+                                  intersection_point->y + TILE_SIZE / 2,
+                                  MIN_DEPTH, TILE_SIZE));
                     (*(se.end() - 1))->frames_in_texture = 8;
 
                     i--;
@@ -407,19 +518,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
             for (instance* brick : bricks) {
                 if (check_slow_collision(b, brick, intersection_point)) {
-                    //                    std::cout << intersection_point->x <<
-                    //                    " "
-                    //                              << intersection_point->y <<
-                    //                              std::endl;
-
                     delete *(bullets.begin() + i);
                     bullets.erase(bullets.begin() + i);
 
                     se.insert(se.end(),
                               new special_effect(
                                   data, intersection_point->x - TILE_SIZE / 2,
-                                  intersection_point->y + TILE_SIZE / 2, 0.0f,
-                                  TILE_SIZE));
+                                  intersection_point->y + TILE_SIZE / 2,
+                                  MIN_DEPTH, TILE_SIZE));
                     (*(se.end() - 1))->frames_in_texture = 8;
 
                     i--;

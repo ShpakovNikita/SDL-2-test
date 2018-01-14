@@ -170,10 +170,7 @@ std::ostream& operator<<(std::ostream& stream, const event e) {
     std::uint32_t value = static_cast<std::uint32_t>(e);
     std::uint32_t minimal = static_cast<std::uint32_t>(event::left_pressed);
     std::uint32_t maximal = static_cast<std::uint32_t>(event::turn_off);
-    if (value >= minimal && value <= maximal) {    ///По идее вообще это не
-                                                   ///должно никогда отрабоатать
-                                                   ///так как сюда поступают
-                                                   ///лишь уже отсеенные события
+    if (value >= minimal && value <= maximal) {
         stream << event_names[value];
         return stream;
     } else {
@@ -264,7 +261,7 @@ std::array<point, 4> instance::get_points() {
                             /*(GLfloat)GL_time() * */
                             alpha, glm::vec3(0.0f, 0.0f, 1.0f));
 
-    float pixel_precision = 0.0f;
+    float pixel_precision = 1.0f;
     v[0].x = 0;
     v[0].y = 0;
 
@@ -297,7 +294,8 @@ void instance::update_points() {
 std::vector<float> instance::get_vector() {
     std::vector<float> v;
     v = data;
-    float k = 1.0f / frames_in_texture;
+    float k_x = 1.0f / frames_in_texture;
+    float k_y = 1.0f / tilesets_in_texture;
 
     glm::mat4 transform;
     transform = glm::rotate(transform,
@@ -320,8 +318,15 @@ std::vector<float> instance::get_vector() {
             v[i] += position.x / t_size;
             v[i + 1] -= position.y / t_size;
         }
-        v[i + 3] *= k;
-        v[i + 3] += k * (selected_frame % frames_in_texture);
+        v[i + 2] = glm::clamp(position.z_index, MAX_DEPTH, MIN_DEPTH) / 2.0f /
+                   MAX_DEPTH;
+
+        v[i + 3] *= k_x;
+        v[i + 3] += k_x * (selected_frame % frames_in_texture);
+
+        v[i + 4] *= k_y;
+        v[i + 4] += k_y * (tilesets_in_texture -
+                           selected_tileset % tilesets_in_texture);
     }
     return v;
 }
@@ -548,7 +553,11 @@ class engine_impl final : public engine {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glDepthFunc(GL_NEVER);
+        glEnable(GL_DEPTH_TEST);
+        glDepthFunc(GL_LEQUAL);
+
+        glAlphaFunc(GL_GREATER, 0.1);
+        glEnable(GL_ALPHA_TEST);
 
         glGenVertexArrays(1, &vao);
         glGenBuffers(1, &vbo);
@@ -562,8 +571,8 @@ class engine_impl final : public engine {
 
     void GL_swap_buffers() final { SDL_GL_SwapWindow(window); }
     void GL_clear_color() final {
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        GL_CHECK();
     }
 
     float GL_time() final { return SDL_GetTicks() / 1000.f; }
@@ -745,9 +754,11 @@ bool line_intersect(point a, point b, point c, point d, point* p) {
         float a3 = triangle_area(c, d, a);
         float a4 = a3 + a2 - a1;
         if (a3 * a4 < 0.0f) {
-            t = a3 / (a3 - a4);
-            p->x = a.x + t * (b.x - a.x);
-            p->y = a.y + t * (b.y - a.y);
+            if (p != nullptr) {
+                t = a3 / (a3 - a4);
+                p->x = a.x + t * (b.x - a.x);
+                p->y = a.y + t * (b.y - a.y);
+            }
             return true;
         }
     }
@@ -779,5 +790,20 @@ float get_direction(float x1, float y1, float x2, float y2) {
         return (std::atan((float)dy / dx) + 2 * M_PI);
     else
         return (M_PI + std::atan((float)dy / dx));
+}
+
+bool ray_cast(const point& p1,
+              const point& p2,
+              const std::vector<instance*>& map) {
+    for (instance* inst : map) {
+        for (int i = 0; i < 4; i++) {
+            if (line_intersect(inst->mesh_points[i],
+                               inst->mesh_points[(i + 1) % 4], p1, p2,
+                               nullptr)) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 }    // namespace CHL
