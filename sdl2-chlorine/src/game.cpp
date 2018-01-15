@@ -56,7 +56,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     /* loading textures */
     texture* brick_tex = new texture();
-    if (!brick_tex->load_texture("brick.png"))
+    if (!brick_tex->load_texture("test.png"))
         std::cerr << "Texture not found!" << std::endl;
 
     texture* player_tex = new texture();
@@ -111,14 +111,25 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     /* generate dungeon and place character */
 
+    instance* grid[y_size][x_size];
+    int map_grid[y_size][x_size];
+
+    int default_tileset = 1, default_frame = 1;
+
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
-            std::cout << *(tile_set.begin() + y * x_size + x) << " ";
+            grid[y][x] = nullptr;
+            map_grid[y][x] = *(tile_set.begin() + y * x_size + x);
             if (*(tile_set.begin() + y * x_size + x) != 0) {
                 bricks.insert(
                     bricks.end(),
                     create_wall(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE,
                                 1.0f, TILE_SIZE));
+                (*(bricks.end() - 1))->frames_in_texture = 9;
+                (*(bricks.end() - 1))->tilesets_in_texture = 3;
+                (*(bricks.end() - 1))->selected_frame = default_frame;
+                (*(bricks.end() - 1))->selected_tileset = default_tileset;
+                grid[y][x] = *(bricks.end() - 1);
             } else if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
                 player->position.x = x * TILE_SIZE;
                 player->position.y = y * TILE_SIZE + TILE_SIZE;
@@ -126,113 +137,165 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 *(tile_set.begin() + y * x_size + x) = 1;
             }
         }
+    }
+
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++) {
+            std::cout << map_grid[y][x] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++) {
+            if (grid[y][x] == nullptr)
+                std::cout << 0 << " ";
+            else
+                std::cout << 1 << " ";
+        }
         std::cout << std::endl;
     }
 
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
+            bool left_bonds = x - 1 >= 0;
+            bool right_bonds = x + 1 < x_size;
+            bool top_bonds = y - 1 >= 0;
+            bool bot_bonds = y + 1 < y_size;
+            std::cout << std::flush;
+            if (map_grid[y][x] == 0) {
+                bool top = (map_grid[y - 1][x] == 1) && top_bonds;
+                bool bottom = (map_grid[y + 1][x] == 1) && bot_bonds;
+                bool left = (map_grid[y][x - 1] == 1) && left_bonds;
+                bool right = (map_grid[y][x + 1] == 1) && right_bonds;
+                if (top &&
+                    grid[y - 1][x]->selected_tileset == default_tileset &&
+                    grid[y - 1][x]->selected_frame == default_frame) {
+                    if (map_grid[y - 1][x - 1] == 0 &&
+                        map_grid[y - 1][x + 1] == 0) {
+                        grid[y - 1][x]->selected_tileset = 0;
+                        grid[y - 1][x]->selected_frame = 5;
+                    } else {
+                        grid[y - 1][x]->selected_tileset = 0;
+                        grid[y - 1][x]->selected_frame = 1;
+                    }
+                }
+                if (top) {
+                    if (map_grid[y - 1][x - 1] == 0) {
+                        grid[y - 1][x]->selected_tileset = 0;
+                        grid[y - 1][x]->selected_frame = 0;
+                    } else if (map_grid[y - 1][x + 1] == 0) {
+                        grid[y - 1][x]->selected_tileset = 0;
+                        grid[y - 1][x]->selected_frame = 2;
+                    }
+                }
+                if (bottom &&
+                    grid[y + 1][x]->selected_tileset == default_tileset &&
+                    grid[y + 1][x]->selected_frame == default_frame) {
+                    if (map_grid[y + 1][x - 1] == 0 &&
+                        map_grid[y + 1][x + 1] == 0) {
+                        grid[y + 1][x]->selected_tileset = 2;
+                        grid[y + 1][x]->selected_frame = 5;
+                    } else if (map_grid[y + 1][x - 1] == 0) {
+                        grid[y + 1][x]->selected_tileset = 2;
+                        grid[y + 1][x]->selected_frame = 0;
+                    } else if (map_grid[y + 1][x + 1] == 0) {
+                        grid[y + 1][x]->selected_tileset = 2;
+                        grid[y + 1][x]->selected_frame = 2;
+                    } else {
+                        grid[y + 1][x]->selected_tileset = 2;
+                        grid[y + 1][x]->selected_frame = 1;
+                    }
+                }
+                if (left &&
+                    grid[y][x - 1]->selected_tileset == default_tileset &&
+                    grid[y][x - 1]->selected_frame == default_frame) {
+                    grid[y][x - 1]->selected_tileset = 1;
+                    grid[y][x - 1]->selected_frame = 2;
+                }
+                if (right &&
+                    grid[y][x + 1]->selected_tileset == default_tileset &&
+                    grid[y][x + 1]->selected_frame == default_frame) {
+                    grid[y][x + 1]->selected_tileset = 1;
+                    grid[y][x + 1]->selected_frame = 0;
+                }
+                if (bottom && right) {
+                    grid[y + 1][x + 1]->selected_tileset = 1;
+                    grid[y + 1][x + 1]->selected_frame = 4;
+                }
+                if (bottom && left) {
+                    grid[y + 1][x - 1]->selected_tileset = 1;
+                    grid[y + 1][x - 1]->selected_frame = 3;
+                }
+                if (top && right) {
+                    grid[y - 1][x + 1]->selected_tileset = 2;
+                    grid[y - 1][x + 1]->selected_frame = 4;
+                }
+                if (top && left) {
+                    grid[y - 1][x - 1]->selected_tileset = 2;
+                    grid[y - 1][x - 1]->selected_frame = 3;
+                }
+            }
         }
+        std::cout << std::endl;
     }
 
-    //    for (int yy = 0; yy < height * 2; yy++) {
-    //        for (var xx = 0; xx < width * 2; xx++) {
-    //            if (grid[#xx div 2, yy div 2] == FLOOR) {
-    //                // Get the tile's x and y
-    //                var tx = xx * tw;
-    //                var ty = yy * th;
-    //
-    //                var right = grid[#(xx + 1) div 2, yy div 2] != FLOOR;
-    //                var left = grid[#(xx - 1) div 2, yy div 2] != FLOOR;
-    //                var top = grid[#xx div 2, (yy - 1) div 2] != FLOOR;
-    //                var bottom = grid[#xx div 2, (yy + 1) div 2] != FLOOR;
-    //
-    //                var top_right = grid[#(xx + 1) div 2, (yy - 1) div 2] !=
-    //                FLOOR; var top_left = grid[#(xx - 1) div 2, (yy - 1) div
-    //                2] != FLOOR; var bottom_right =
-    //                    grid[#(xx + 1) div 2, (yy + 1) div 2] != FLOOR;
-    //                var bottom_left =
-    //                    grid[#(xx - 1) div 2, (yy + 1) div 2] != FLOOR;
-    //
-    //                if (right) {
-    //                    if (bottom) {
-    //                        tile_add(bg_walltiles, tw * 4, th * 1, tw, th, tx
-    //                        + tw,
-    //                                 ty, -ty);
-    //                    } else if (top) {
-    //                        if (top_right) {
-    //                            tile_add(bg_walltiles, tw * 4, th * 0, tw, th,
-    //                                     tx + tw, ty - th, -ty);
-    //                        } else {
-    //                            tile_add(bg_walltiles, tw * 3, th * 0, tw, th,
-    //                            tx,
-    //                                     ty - th, -ty);
-    //                        }
-    //                        tile_add(bg_walltiles, tw * 0, th * 1, tw, th, tx
-    //                        + tw,
-    //                                 ty, -ty);
-    //                    } else {
-    //                        tile_add(bg_walltiles, tw * 0, th * 1, tw, th, tx
-    //                        + tw,
-    //                                 ty, -ty);
-    //                    }
-    //                }
-    //
-    //                if (left) {
-    //                    if (bottom) {
-    //                        tile_add(bg_walltiles, tw * 3, th * 1, tw, th, tx
-    //                        - tw,
-    //                                 ty, -ty);
-    //                    } else if (top) {
-    //                        if (top_left) {
-    //                            tile_add(bg_walltiles, tw * 3, th * 0, tw, th,
-    //                                     tx - tw, ty - th, -ty);
-    //                        } else {
-    //                            tile_add(bg_walltiles, tw * 4, th * 0, tw, th,
-    //                            tx,
-    //                                     ty - th, -ty);
-    //                        }
-    //                        tile_add(bg_walltiles, tw * 2, th * 1, tw, th, tx
-    //                        - tw,
-    //                                 ty, -ty);
-    //                    } else {
-    //                        tile_add(bg_walltiles, tw * 2, th * 1, tw, th, tx
-    //                        - tw,
-    //                                 ty, -ty);
-    //                    }
-    //                }
-    //
-    //                if (top) {
-    //                    if (!top_right) {
-    //                        tile_add(bg_walltiles, tw * 2, th * 2, tw, th, tx,
-    //                                 ty - th, -ty);
-    //                    } else if (!top_left) {
-    //                        tile_add(bg_walltiles, tw * 0, th * 2, tw, th, tx,
-    //                                 ty - th, -ty);
-    //                    } else {
-    //                        tile_add(bg_walltiles, tw * 1, th * 2, tw, th, tx,
-    //                                 ty - th, -ty);
-    //                    }
-    //                }
-    //
-    //                if (bottom) {
-    //                    if (!bottom_right) {
-    //                        tile_add(bg_walltiles, tw * 2, th * 0, tw, th, tx,
-    //                        ty,
-    //                                 -ty - tw);
-    //                    } else if (!bottom_left) {
-    //                        tile_add(bg_walltiles, tw * 0, th * 0, tw, th, tx,
-    //                        ty,
-    //                                 -ty - tw);
-    //                    } else {
-    //                        tile_add(bg_walltiles, tw * 1, th * 0, tw, th, tx,
-    //                        ty,
-    //                                 -ty - tw);
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++) {
+            if (map_grid[y][x] == 1) {
+                bool left_bonds = x - 1 >= 0;
+                bool right_bonds = x + 1 < x_size;
+                bool top_bonds = y - 1 >= 0;
+                bool bot_bonds = y + 1 < y_size;
 
+                bool horisontal_bonds = left_bonds && right_bonds;
+                bool vertical_bonds = top_bonds && bot_bonds;
+
+                bool bonds = vertical_bonds && horisontal_bonds;
+
+                bool vertical =
+                    map_grid[y][x - 1] == 0 && map_grid[y][x + 1] == 0 && bonds;
+                bool horisontal =
+                    map_grid[y - 1][x] == 0 && map_grid[y + 1][x] == 0 && bonds;
+
+                if (vertical) {
+                    if (map_grid[y - 1][x] == 0) {
+                        grid[y][x]->selected_tileset = 2;
+                        grid[y][x]->selected_frame = 5;
+                    } else if (map_grid[y + 1][x] == 0) {
+                        grid[y][x]->selected_tileset = 0;
+                        grid[y][x]->selected_frame = 5;
+                    } else {
+                        grid[y][x]->selected_tileset = 1;
+                        grid[y][x]->selected_frame = 5;
+                    }
+                    if (map_grid[y + 1][x - 1] == 0 &&
+                        map_grid[y + 1][x + 1] == 1) {
+                        grid[y + 1][x]->selected_tileset = 1;
+                        grid[y + 1][x]->selected_frame = 6;
+                    } else if (map_grid[y + 1][x - 1] == 1 &&
+                               map_grid[y + 1][x + 1] == 0) {
+                        grid[y + 1][x]->selected_tileset = 0;
+                        grid[y + 1][x]->selected_frame = 6;
+                    } else if (map_grid[y - 1][x - 1] == 1 &&
+                               map_grid[y - 1][x + 1] == 0) {
+                        grid[y - 1][x]->selected_tileset = 0;
+                        grid[y - 1][x]->selected_frame = 7;
+                    } else if (map_grid[y - 1][x - 1] == 0 &&
+                               map_grid[y - 1][x + 1] == 1) {
+                        grid[y - 1][x]->selected_tileset = 1;
+                        grid[y - 1][x]->selected_frame = 7;
+                    }
+                }
+                if (vertical && horisontal) {
+                    grid[y][x]->selected_tileset = 2;
+                    grid[y][x]->selected_frame = 1;
+                }
+            }
+        }
+    }
     /* tiles selected */
 
     /* load background */
@@ -251,7 +314,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<enemy*> enemies;
 
     int count = 0;
-    while (count < 5) {
+    while (count < 50) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
@@ -269,7 +332,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     sound move_sound(SND_FOLDER + MOVE_SOUND);
     sound shot_sound(SND_FOLDER + "shot.wav");
     idle_sound.play_always();
-    start_music.play_always();
+    //    start_music.play_always();
 
     bool one_time_change = true;
 
@@ -295,7 +358,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     quit = true;
                     break;
                 case event::select_pressed:
-                    current_mode = mode::draw;
+                    quit = true;
                     break;
                 case event::button1_pressed:
                     if (delay <= 0) {
@@ -453,7 +516,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
             e->destination.y = player->position.y - TILE_SIZE / 2;
             for (instance* inst : bricks) {
                 if (check_collision(e, inst)) {
-                    //                    std::cout << "Collide!" << std::endl;
+                    //                    std::cout << "Collide!" <<
+                    //                    std::endl;
                     e->position.x -= e->delta_x;
                     while (check_collision(e, inst))
                         e->position.y -= e->delta_y / 4;

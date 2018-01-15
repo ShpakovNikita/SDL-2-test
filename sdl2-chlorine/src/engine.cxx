@@ -325,8 +325,7 @@ std::vector<float> instance::get_vector() {
         v[i + 3] += k_x * (selected_frame % frames_in_texture);
 
         v[i + 4] *= k_y;
-        v[i + 4] += k_y * (tilesets_in_texture -
-                           selected_tileset % tilesets_in_texture);
+        v[i + 4] += k_y * (selected_tileset % tilesets_in_texture);
     }
     return v;
 }
