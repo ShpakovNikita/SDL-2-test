@@ -125,7 +125,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     bricks.end(),
                     create_wall(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE,
                                 1.0f, TILE_SIZE));
-                (*(bricks.end() - 1))->frames_in_texture = 9;
+                (*(bricks.end() - 1))->frames_in_texture = 13;
                 (*(bricks.end() - 1))->tilesets_in_texture = 3;
                 (*(bricks.end() - 1))->selected_frame = default_frame;
                 (*(bricks.end() - 1))->selected_tileset = default_tileset;
@@ -255,8 +255,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
                 bool bonds = vertical_bonds && horisontal_bonds;
 
-                bool vertical =
-                    map_grid[y][x - 1] == 0 && map_grid[y][x + 1] == 0 && bonds;
+                bool vertical = map_grid[y][x - 1] == 0 &&
+                                map_grid[y][x + 1] == 0 && horisontal_bonds;
                 bool horisontal =
                     map_grid[y - 1][x] == 0 && map_grid[y + 1][x] == 0 && bonds;
 
@@ -271,6 +271,45 @@ int main(int /*argc*/, char* /*argv*/ []) {
                         grid[y][x]->selected_tileset = 1;
                         grid[y][x]->selected_frame = 5;
                     }
+                }
+
+                if (horisontal) {
+                    if (map_grid[y][x - 1] == 0) {
+                        grid[y][x]->selected_tileset = 2;
+                        grid[y][x]->selected_frame = 6;
+                    } else if (map_grid[y][x + 1] == 0) {
+                        grid[y][x]->selected_tileset = 2;
+                        grid[y][x]->selected_frame = 8;
+                    }
+                }
+
+                if (vertical && horisontal) {
+                    grid[y][x]->selected_tileset = 2;
+                    grid[y][x]->selected_frame = 7;
+                }
+            }
+        }
+    }
+
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++) {
+            if (map_grid[y][x] == 1) {
+                bool left_bonds = x - 1 >= 0;
+                bool right_bonds = x + 1 < x_size;
+                bool top_bonds = y - 1 >= 0;
+                bool bot_bonds = y + 1 < y_size;
+
+                bool horisontal_bonds = left_bonds && right_bonds;
+                bool vertical_bonds = top_bonds && bot_bonds;
+
+                bool bonds = vertical_bonds && horisontal_bonds;
+
+                bool vertical =
+                    map_grid[y][x - 1] == 0 && map_grid[y][x + 1] == 0 && bonds;
+                bool horisontal =
+                    map_grid[y - 1][x] == 0 && map_grid[y + 1][x] == 0 && bonds;
+
+                if (vertical) {
                     if (map_grid[y + 1][x - 1] == 0 &&
                         map_grid[y + 1][x + 1] == 1) {
                         grid[y + 1][x]->selected_tileset = 1;
@@ -279,19 +318,75 @@ int main(int /*argc*/, char* /*argv*/ []) {
                                map_grid[y + 1][x + 1] == 0) {
                         grid[y + 1][x]->selected_tileset = 0;
                         grid[y + 1][x]->selected_frame = 6;
-                    } else if (map_grid[y - 1][x - 1] == 1 &&
-                               map_grid[y - 1][x + 1] == 0) {
+                    } else if (map_grid[y + 1][x - 1] == 1 &&
+                               map_grid[y + 1][x + 1] == 1) {
+                        grid[y + 1][x]->selected_tileset = 0;
+                        grid[y + 1][x]->selected_frame = 8;
+                    }
+
+                    if (map_grid[y - 1][x - 1] == 1 &&
+                        map_grid[y - 1][x + 1] == 0) {
                         grid[y - 1][x]->selected_tileset = 0;
                         grid[y - 1][x]->selected_frame = 7;
                     } else if (map_grid[y - 1][x - 1] == 0 &&
                                map_grid[y - 1][x + 1] == 1) {
                         grid[y - 1][x]->selected_tileset = 1;
                         grid[y - 1][x]->selected_frame = 7;
+                    } else if (map_grid[y - 1][x - 1] == 1 &&
+                               map_grid[y - 1][x + 1] == 1) {
+                        grid[y - 1][x]->selected_tileset = 1;
+                        grid[y - 1][x]->selected_frame = 8;
                     }
                 }
-                if (vertical && horisontal) {
-                    grid[y][x]->selected_tileset = 2;
-                    grid[y][x]->selected_frame = 1;
+            }
+        }
+    }
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++) {
+            if (map_grid[y][x] == 1) {
+                bool left_bonds = x - 1 >= 0;
+                bool right_bonds = x + 1 < x_size;
+                bool top_bonds = y - 1 >= 0;
+                bool bot_bonds = y + 1 < y_size;
+
+                bool horisontal_bonds = left_bonds && right_bonds;
+                bool vertical_bonds = top_bonds && bot_bonds;
+
+                bool bonds = vertical_bonds && horisontal_bonds;
+                if (bonds) {
+                    if (map_grid[y - 1][x] == 0 && map_grid[y + 1][x] == 1 &&
+                        map_grid[y + 1][x + 1] == 1 &&
+                        map_grid[y + 1][x - 1] == 0 &&
+                        map_grid[y][x - 1] == 1 && map_grid[y][x + 1] == 1) {
+                        grid[y][x]->selected_tileset = 0;
+                        grid[y][x]->selected_frame = 10;
+                    } else if (map_grid[y - 1][x] == 0 &&
+                               map_grid[y + 1][x] == 1 &&
+                               map_grid[y + 1][x + 1] == 0 &&
+                               map_grid[y + 1][x - 1] == 1 &&
+                               map_grid[y][x - 1] == 1 &&
+                               map_grid[y][x + 1] == 1) {
+                        grid[y][x]->selected_tileset = 0;
+                        grid[y][x]->selected_frame = 9;
+                    } else if (map_grid[y - 1][x] == 1 &&
+                               map_grid[y][x + 1] == 1 &&
+                               map_grid[y][x - 1] == 1 &&
+                               map_grid[y + 1][x] == 0 &&
+                               map_grid[y - 1][x + 1] == 1 &&
+                               map_grid[y - 1][x - 1] == 0) {
+                        grid[y][x]->selected_tileset = 1;
+                        grid[y][x]->selected_frame = 12;
+                        std::cout << "success! " << x << ' ' << y << std::endl;
+                    } else if (map_grid[y - 1][x] == 1 &&
+                               map_grid[y][x + 1] == 1 &&
+                               map_grid[y][x - 1] == 1 &&
+                               map_grid[y + 1][x] == 0 &&
+                               map_grid[y - 1][x + 1] == 0 &&
+                               map_grid[y - 1][x - 1] == 1) {
+                        grid[y][x]->selected_tileset = 1;
+                        grid[y][x]->selected_frame = 11;
+                        std::cout << "success! " << x << ' ' << y << std::endl;
+                    }
                 }
             }
         }
@@ -314,7 +409,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<enemy*> enemies;
 
     int count = 0;
-    while (count < 50) {
+    while (count < 0) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
