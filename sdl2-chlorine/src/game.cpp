@@ -17,6 +17,7 @@
 #include "headers/bullet.h"
 #include "headers/enemy.h"
 #include "headers/special_effect.h"
+#include "headers/autotile.hxx"
 
 enum class mode { draw, look, idle };
 
@@ -111,10 +112,15 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     /* generate dungeon and place character */
 
-    instance* grid[y_size][x_size];
-    int map_grid[y_size][x_size];
+    instance*** grid;
+    grid = new instance**[y_size];
+    for (int i = 0; i < y_size; i++)
+        grid[i] = new instance*[x_size];
 
-    int default_tileset = 1, default_frame = 1;
+    int** map_grid;
+    map_grid = new int*[y_size];
+    for (int i = 0; i < y_size; i++)
+        map_grid[i] = new int[x_size];
 
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
@@ -139,258 +145,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
     }
 
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++) {
-            std::cout << map_grid[y][x] << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++) {
-            if (grid[y][x] == nullptr)
-                std::cout << 0 << " ";
-            else
-                std::cout << 1 << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++) {
-            bool left_bonds = x - 1 >= 0;
-            bool right_bonds = x + 1 < x_size;
-            bool top_bonds = y - 1 >= 0;
-            bool bot_bonds = y + 1 < y_size;
-            std::cout << std::flush;
-            if (map_grid[y][x] == 0) {
-                bool top = (map_grid[y - 1][x] == 1) && top_bonds;
-                bool bottom = (map_grid[y + 1][x] == 1) && bot_bonds;
-                bool left = (map_grid[y][x - 1] == 1) && left_bonds;
-                bool right = (map_grid[y][x + 1] == 1) && right_bonds;
-                if (top &&
-                    grid[y - 1][x]->selected_tileset == default_tileset &&
-                    grid[y - 1][x]->selected_frame == default_frame) {
-                    if (map_grid[y - 1][x - 1] == 0 &&
-                        map_grid[y - 1][x + 1] == 0) {
-                        grid[y - 1][x]->selected_tileset = 0;
-                        grid[y - 1][x]->selected_frame = 5;
-                    } else {
-                        grid[y - 1][x]->selected_tileset = 0;
-                        grid[y - 1][x]->selected_frame = 1;
-                    }
-                }
-                if (top) {
-                    if (map_grid[y - 1][x - 1] == 0) {
-                        grid[y - 1][x]->selected_tileset = 0;
-                        grid[y - 1][x]->selected_frame = 0;
-                    } else if (map_grid[y - 1][x + 1] == 0) {
-                        grid[y - 1][x]->selected_tileset = 0;
-                        grid[y - 1][x]->selected_frame = 2;
-                    }
-                }
-                if (bottom &&
-                    grid[y + 1][x]->selected_tileset == default_tileset &&
-                    grid[y + 1][x]->selected_frame == default_frame) {
-                    if (map_grid[y + 1][x - 1] == 0 &&
-                        map_grid[y + 1][x + 1] == 0) {
-                        grid[y + 1][x]->selected_tileset = 2;
-                        grid[y + 1][x]->selected_frame = 5;
-                    } else if (map_grid[y + 1][x - 1] == 0) {
-                        grid[y + 1][x]->selected_tileset = 2;
-                        grid[y + 1][x]->selected_frame = 0;
-                    } else if (map_grid[y + 1][x + 1] == 0) {
-                        grid[y + 1][x]->selected_tileset = 2;
-                        grid[y + 1][x]->selected_frame = 2;
-                    } else {
-                        grid[y + 1][x]->selected_tileset = 2;
-                        grid[y + 1][x]->selected_frame = 1;
-                    }
-                }
-                if (left &&
-                    grid[y][x - 1]->selected_tileset == default_tileset &&
-                    grid[y][x - 1]->selected_frame == default_frame) {
-                    grid[y][x - 1]->selected_tileset = 1;
-                    grid[y][x - 1]->selected_frame = 2;
-                }
-                if (right &&
-                    grid[y][x + 1]->selected_tileset == default_tileset &&
-                    grid[y][x + 1]->selected_frame == default_frame) {
-                    grid[y][x + 1]->selected_tileset = 1;
-                    grid[y][x + 1]->selected_frame = 0;
-                }
-                if (bottom && right) {
-                    grid[y + 1][x + 1]->selected_tileset = 1;
-                    grid[y + 1][x + 1]->selected_frame = 4;
-                }
-                if (bottom && left) {
-                    grid[y + 1][x - 1]->selected_tileset = 1;
-                    grid[y + 1][x - 1]->selected_frame = 3;
-                }
-                if (top && right) {
-                    grid[y - 1][x + 1]->selected_tileset = 2;
-                    grid[y - 1][x + 1]->selected_frame = 4;
-                }
-                if (top && left) {
-                    grid[y - 1][x - 1]->selected_tileset = 2;
-                    grid[y - 1][x - 1]->selected_frame = 3;
-                }
-            }
-        }
-        std::cout << std::endl;
-    }
-
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++) {
-            if (map_grid[y][x] == 1) {
-                bool left_bonds = x - 1 >= 0;
-                bool right_bonds = x + 1 < x_size;
-                bool top_bonds = y - 1 >= 0;
-                bool bot_bonds = y + 1 < y_size;
-
-                bool horisontal_bonds = left_bonds && right_bonds;
-                bool vertical_bonds = top_bonds && bot_bonds;
-
-                bool bonds = vertical_bonds && horisontal_bonds;
-
-                bool vertical = map_grid[y][x - 1] == 0 &&
-                                map_grid[y][x + 1] == 0 && horisontal_bonds;
-                bool horisontal =
-                    map_grid[y - 1][x] == 0 && map_grid[y + 1][x] == 0 && bonds;
-
-                if (vertical) {
-                    if (map_grid[y - 1][x] == 0) {
-                        grid[y][x]->selected_tileset = 2;
-                        grid[y][x]->selected_frame = 5;
-                    } else if (map_grid[y + 1][x] == 0) {
-                        grid[y][x]->selected_tileset = 0;
-                        grid[y][x]->selected_frame = 5;
-                    } else {
-                        grid[y][x]->selected_tileset = 1;
-                        grid[y][x]->selected_frame = 5;
-                    }
-                }
-
-                if (horisontal) {
-                    if (map_grid[y][x - 1] == 0) {
-                        grid[y][x]->selected_tileset = 2;
-                        grid[y][x]->selected_frame = 6;
-                    } else if (map_grid[y][x + 1] == 0) {
-                        grid[y][x]->selected_tileset = 2;
-                        grid[y][x]->selected_frame = 8;
-                    }
-                }
-
-                if (vertical && horisontal) {
-                    grid[y][x]->selected_tileset = 2;
-                    grid[y][x]->selected_frame = 7;
-                }
-            }
-        }
-    }
-
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++) {
-            if (map_grid[y][x] == 1) {
-                bool left_bonds = x - 1 >= 0;
-                bool right_bonds = x + 1 < x_size;
-                bool top_bonds = y - 1 >= 0;
-                bool bot_bonds = y + 1 < y_size;
-
-                bool horisontal_bonds = left_bonds && right_bonds;
-                bool vertical_bonds = top_bonds && bot_bonds;
-
-                bool bonds = vertical_bonds && horisontal_bonds;
-
-                bool vertical =
-                    map_grid[y][x - 1] == 0 && map_grid[y][x + 1] == 0 && bonds;
-                bool horisontal =
-                    map_grid[y - 1][x] == 0 && map_grid[y + 1][x] == 0 && bonds;
-
-                if (vertical) {
-                    if (map_grid[y + 1][x - 1] == 0 &&
-                        map_grid[y + 1][x + 1] == 1) {
-                        grid[y + 1][x]->selected_tileset = 1;
-                        grid[y + 1][x]->selected_frame = 6;
-                    } else if (map_grid[y + 1][x - 1] == 1 &&
-                               map_grid[y + 1][x + 1] == 0) {
-                        grid[y + 1][x]->selected_tileset = 0;
-                        grid[y + 1][x]->selected_frame = 6;
-                    } else if (map_grid[y + 1][x - 1] == 1 &&
-                               map_grid[y + 1][x + 1] == 1) {
-                        grid[y + 1][x]->selected_tileset = 0;
-                        grid[y + 1][x]->selected_frame = 8;
-                    }
-
-                    if (map_grid[y - 1][x - 1] == 1 &&
-                        map_grid[y - 1][x + 1] == 0) {
-                        grid[y - 1][x]->selected_tileset = 0;
-                        grid[y - 1][x]->selected_frame = 7;
-                    } else if (map_grid[y - 1][x - 1] == 0 &&
-                               map_grid[y - 1][x + 1] == 1) {
-                        grid[y - 1][x]->selected_tileset = 1;
-                        grid[y - 1][x]->selected_frame = 7;
-                    } else if (map_grid[y - 1][x - 1] == 1 &&
-                               map_grid[y - 1][x + 1] == 1) {
-                        grid[y - 1][x]->selected_tileset = 1;
-                        grid[y - 1][x]->selected_frame = 8;
-                    }
-                }
-            }
-        }
-    }
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++) {
-            if (map_grid[y][x] == 1) {
-                bool left_bonds = x - 1 >= 0;
-                bool right_bonds = x + 1 < x_size;
-                bool top_bonds = y - 1 >= 0;
-                bool bot_bonds = y + 1 < y_size;
-
-                bool horisontal_bonds = left_bonds && right_bonds;
-                bool vertical_bonds = top_bonds && bot_bonds;
-
-                bool bonds = vertical_bonds && horisontal_bonds;
-                if (bonds) {
-                    if (map_grid[y - 1][x] == 0 && map_grid[y + 1][x] == 1 &&
-                        map_grid[y + 1][x + 1] == 1 &&
-                        map_grid[y + 1][x - 1] == 0 &&
-                        map_grid[y][x - 1] == 1 && map_grid[y][x + 1] == 1) {
-                        grid[y][x]->selected_tileset = 0;
-                        grid[y][x]->selected_frame = 10;
-                    } else if (map_grid[y - 1][x] == 0 &&
-                               map_grid[y + 1][x] == 1 &&
-                               map_grid[y + 1][x + 1] == 0 &&
-                               map_grid[y + 1][x - 1] == 1 &&
-                               map_grid[y][x - 1] == 1 &&
-                               map_grid[y][x + 1] == 1) {
-                        grid[y][x]->selected_tileset = 0;
-                        grid[y][x]->selected_frame = 9;
-                    } else if (map_grid[y - 1][x] == 1 &&
-                               map_grid[y][x + 1] == 1 &&
-                               map_grid[y][x - 1] == 1 &&
-                               map_grid[y + 1][x] == 0 &&
-                               map_grid[y - 1][x + 1] == 1 &&
-                               map_grid[y - 1][x - 1] == 0) {
-                        grid[y][x]->selected_tileset = 1;
-                        grid[y][x]->selected_frame = 12;
-                        std::cout << "success! " << x << ' ' << y << std::endl;
-                    } else if (map_grid[y - 1][x] == 1 &&
-                               map_grid[y][x + 1] == 1 &&
-                               map_grid[y][x - 1] == 1 &&
-                               map_grid[y + 1][x] == 0 &&
-                               map_grid[y - 1][x + 1] == 0 &&
-                               map_grid[y - 1][x - 1] == 1) {
-                        grid[y][x]->selected_tileset = 1;
-                        grid[y][x]->selected_frame = 11;
-                        std::cout << "success! " << x << ' ' << y << std::endl;
-                    }
-                }
-            }
-        }
-    }
+    autotile(map_grid, grid, x_size, y_size);
     /* tiles selected */
 
     /* load background */
