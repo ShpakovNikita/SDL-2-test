@@ -11,5 +11,5 @@ void main()
 {
     gl_Position = transform * vec4(position, 1.0);
     vertex_color = our_color;
-    tex_coord = texCoord;
+    tex_coord = vec2(texCoord.x, 1.0 - texCoord.y);
 }

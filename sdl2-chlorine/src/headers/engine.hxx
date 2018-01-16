@@ -129,6 +129,8 @@ class instance {
     int selected_tileset = 0;
     int frames_in_texture = 1;
     int tilesets_in_texture = 1;
+    int frames_in_animation = 1;    //!
+
     std::array<point, 4> mesh_points;
 
     std::array<point, 4> get_points();
@@ -136,7 +138,15 @@ class instance {
     void update_points();
     std::vector<float> get_vector();
 
+    void update();                                         // !
+    void play_animation(float seconds_betweeen_frames);    // !
+    void loop_animation(float seconds_betweeen_frames);    //!
+
    protected:
+    bool animation_playing = false;    //!
+    bool animation_loop = false;       //!
+    int delay;                         //!
+    float delta_frame;
     std::vector<float> data;
 };
 
@@ -186,7 +196,7 @@ class engine {
     virtual void GL_swap_buffers() = 0;
     virtual float GL_time() = 0;
 
-    virtual int CHL_init(int, int, int) = 0;
+    virtual int CHL_init(int, int, int, int) = 0;
     virtual bool read_input(event&) = 0;
     virtual void CHL_exit() = 0;
     virtual point get_mouse_pos() = 0;

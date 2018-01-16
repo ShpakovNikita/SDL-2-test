@@ -50,7 +50,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::unique_ptr<engine, void (*)(engine*)> eng(create_engine(),
                                                    destroy_engine);
 
-    eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE);
+    eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE, FPS);
     eng->set_virtual_pixel(WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4);
 
     int k = -1;
@@ -74,6 +74,10 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     texture* explosion_tex = new texture();
     if (!explosion_tex->load_texture("explosion-6.png"))
+        std::cerr << "Texture not found!" << std::endl;
+
+    texture* obelisk_tex = new texture();
+    if (!obelisk_tex->load_texture("obelisk.png"))
         std::cerr << "Texture not found!" << std::endl;
 
     std::ifstream fin(VERTEX_FILE);
@@ -146,7 +150,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
     }
 
     autotile(map_grid, grid, x_size, y_size);
-    /* tiles selected */
 
     /* load background */
     std::vector<instance*> floor;
@@ -196,6 +199,15 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     std::vector<special_effect*> se;
 
+    /* animation test */
+    instance* animated_block =
+        new instance(data, 5 * TILE_SIZE - 4, 5 * TILE_SIZE + TILE_SIZE - 4,
+                     MIN_DEPTH, TILE_SIZE + 8);
+    animated_block->frames_in_animation = 11;
+    animated_block->frames_in_texture = 11;
+    animated_block->loop_animation(0.08);
+
+    /* running game loop */
     while (!quit) {
         float delta_time = eng->GL_time() - prev_frame;
         prev_frame = eng->GL_time();
@@ -497,9 +509,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
         if (!se.empty())
             eng->draw(*se.begin(), explosion_tex);
 
+        animated_block->update();
+        eng->add_object(animated_block);
+        eng->draw(animated_block, obelisk_tex);
+
         eng->GL_swap_buffers();
 
-        /*sleep*/
+        /* dynamic sleep */
         float time = (eng->GL_time() - prev_frame) * 1000;
         if (time < 1000 / FPS)
             std::this_thread::sleep_for(

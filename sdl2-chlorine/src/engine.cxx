@@ -58,6 +58,8 @@ const std::string VERTEX_PATH = "shaders\\simple_vertex.glsl";
     }
 
 namespace CHL {
+int FPS;
+
 vertex_2d operator+(vertex_2d& vl, vertex_2d& vr) {
     vertex_2d v;
     v.x = vl.x + vr.x;
@@ -291,6 +293,30 @@ void instance::update_points() {
     mesh_points = get_points();
 }
 
+void instance::update() {
+    if ((animation_playing || animation_loop) && delay <= 0) {
+        delay = delta_frame * FPS;
+        selected_frame += 1;
+        if (selected_frame == frames_in_animation) {
+            selected_frame = 0;
+            animation_playing = false;
+        }
+    } else if (animation_playing || animation_loop)
+        delay -= 1;
+}
+
+void instance::play_animation(float seconds_betweeen_frames) {
+    animation_playing = true;
+    delta_frame = seconds_betweeen_frames;
+    delay = delta_frame * FPS;
+}
+
+void instance::loop_animation(float seconds_betweeen_frames) {
+    delta_frame = seconds_betweeen_frames;
+    delay = delta_frame * FPS;
+    animation_loop ^= 1;
+}
+
 std::vector<float> instance::get_vector() {
     std::vector<float> v;
     v = data;
@@ -479,9 +505,11 @@ class engine_impl final : public engine {
     }
 
    public:
-    int CHL_init(int width, int height, int size) final {
+    int CHL_init(int width, int height, int size, int fps) final {
         SDL_version compiled = {0, 0, 0};
         SDL_version linked = {0, 0, 0};
+
+        FPS = fps;
 
         SDL_VERSION(&compiled);
         SDL_GetVersion(&linked);
