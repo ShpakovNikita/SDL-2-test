@@ -18,6 +18,7 @@
 #include "headers/enemy.h"
 #include "headers/special_effect.h"
 #include "headers/autotile.hxx"
+#include "headers/pathfinders.h"
 
 enum class mode { draw, look, idle };
 
@@ -126,6 +127,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     for (int i = 0; i < y_size; i++)
         map_grid[i] = new int[x_size];
 
+    point start_p, end_p;
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
             grid[y][x] = nullptr;
@@ -145,6 +147,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 player->position.y = y * TILE_SIZE + TILE_SIZE;
                 placed = true;
                 *(tile_set.begin() + y * x_size + x) = 1;
+                start_p.x = x;
+                start_p.y = y;
             }
         }
     }
@@ -167,7 +171,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<enemy*> enemies;
 
     int count = 0;
-    while (count < 0) {
+    while (count < 1) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
@@ -177,6 +181,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                           P_SPEED - 25, TILE_SIZE));
             (*(enemies.end() - 1))->frames_in_texture = 4;
             (*(enemies.end() - 1))->collision_box.y = TILE_SIZE / 2;
+            end_p.x = x;
+            end_p.y = y;
             count++;
         }
     }
@@ -199,13 +205,30 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     std::vector<special_effect*> se;
 
+    /* pathfinding test */
+    int map_grid_pf[x_size * y_size];
+    convert2d_array(map_grid, map_grid_pf, x_size, y_size);
+    int o_buff[x_size * y_size];
+    int s = AStarFindPath(start_p.x, start_p.y, end_p.x, end_p.y, map_grid_pf,
+                          x_size, y_size, o_buff, x_size * y_size);
+    for (int y = 0; y < y_size; y++) {
+        for (int x = 0; x < x_size; x++)
+            std::cout << map_grid[y][x] << " ";
+        std::cout << std::endl;
+    }
+    std::cout << start_p.x << " " << start_p.y << std::endl;
+    std::cout << end_p.x << " " << end_p.y << std::endl;
+    for (int i = 0; i < s; i++)
+        std::cout << o_buff[i] / x_size << " "
+                  << o_buff[i] - x_size * (o_buff[i] / x_size) << std::endl;
+
     /* animation test */
     instance* animated_block =
         new instance(data, 5 * TILE_SIZE - 4, 5 * TILE_SIZE + TILE_SIZE - 4,
                      MIN_DEPTH, TILE_SIZE + 8);
     animated_block->frames_in_animation = 11;
     animated_block->frames_in_texture = 11;
-    animated_block->loop_animation(0.08);
+    animated_block->loop_animation(0.06f);
 
     /* running game loop */
     while (!quit) {

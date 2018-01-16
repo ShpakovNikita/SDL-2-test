@@ -138,9 +138,13 @@ class instance {
     void update_points();
     std::vector<float> get_vector();
 
-    void update();                                         // !
+    void update();    // !
+    void play_animation(float seconds_betweeen_frames,
+                        int tileset);    // !
+    void loop_animation(float seconds_betweeen_frames,
+                        int tileset);                      //!
     void play_animation(float seconds_betweeen_frames);    // !
-    void loop_animation(float seconds_betweeen_frames);    //!
+    void loop_animation(float seconds_betweeen_frames);
 
    protected:
     bool animation_playing = false;    //!
@@ -148,6 +152,9 @@ class instance {
     int delay;                         //!
     float delta_frame;
     std::vector<float> data;
+
+   private:
+    int prev_tileset;
 };
 
 class life_form : public instance {

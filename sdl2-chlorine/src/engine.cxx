@@ -299,19 +299,33 @@ void instance::update() {
         selected_frame += 1;
         if (selected_frame == frames_in_animation) {
             selected_frame = 0;
-            animation_playing = false;
+            if (animation_playing) {
+                animation_playing = false;
+                selected_tileset = prev_tileset;
+            }
         }
     } else if (animation_playing || animation_loop)
         delay -= 1;
 }
 
 void instance::play_animation(float seconds_betweeen_frames) {
+    play_animation(seconds_betweeen_frames, selected_tileset);
+}
+
+void instance::play_animation(float seconds_betweeen_frames, int tileset) {
+    selected_tileset = tileset % tilesets_in_texture;
+    prev_tileset = tileset % tilesets_in_texture;
     animation_playing = true;
     delta_frame = seconds_betweeen_frames;
     delay = delta_frame * FPS;
 }
 
 void instance::loop_animation(float seconds_betweeen_frames) {
+    loop_animation(seconds_betweeen_frames, selected_tileset);
+}
+
+void instance::loop_animation(float seconds_betweeen_frames, int tileset) {
+    selected_tileset = tileset % tilesets_in_texture;
     delta_frame = seconds_betweeen_frames;
     delay = delta_frame * FPS;
     animation_loop ^= 1;
