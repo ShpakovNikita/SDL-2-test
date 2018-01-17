@@ -5,7 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(SOURCE game.cpp engine.cxx sound.cxx bullet.cpp headers/autotile.hxx 
 texture.cxx headers/bullet.h headers/engine.hxx enemy.cpp headers/enemy.h 
 headers/picopng.hxx dungeon.cpp special_effect.cpp headers/special_effect.h
-headers/pathfinders.h pathfinders.cpp headers/collision_solves.hxx)
+headers/pathfinders.h pathfinders.cpp headers/collision_solves.hxx 
+headers/game_constants.h)
 
 if(UNIX)
     set(PROJECT_LINK_LIB -lSDL2main -lSDL2)

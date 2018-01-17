@@ -21,26 +21,9 @@
 #include "headers/pathfinders.h"
 #include "headers/collision_solves.hxx"
 
+#include "headers/game_constants.h"
+
 enum class mode { draw, look, idle };
-
-const std::string SND_FOLDER = "sounds\\";
-
-const std::string START_MUSIC = "main.wav";
-const std::string IDLE_SOUND = "idle.wav";
-const std::string MOVE_SOUND = "move.wav";
-
-const std::string VERTEX_FILE = "vertices.txt";
-const std::string SIN_FILE = "sin.txt";
-
-constexpr int WINDOW_WIDTH = 1536;
-constexpr int WINDOW_HEIGHT = 960;
-
-constexpr int TILE_SIZE = 16;
-
-constexpr int FPS = 60;
-
-constexpr int P_SPEED = 32;
-constexpr int B_SPEED = 65;
 
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
@@ -49,6 +32,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE, FPS);
     eng->set_virtual_pixel(WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4);
+
+    eng->GL_clear_color();
+    eng->GL_swap_buffers();
+
+    std::vector<CHL::instance*> bricks;
 
     int k = -1;
 
@@ -92,11 +80,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
     for (int i = 0; i < 18; i++)
         keys[i] = false;
 
-    std::vector<instance*> bricks;
     std::vector<bullet*> bullets;
 
-    int x_size = WINDOW_WIDTH / 4 / TILE_SIZE,
-        y_size = WINDOW_HEIGHT / 4 / TILE_SIZE;
     DungeonGenerator generator(x_size, y_size);
     auto map = generator.Generate();
     std::vector<int> tile_set = map.Print();
@@ -167,6 +152,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     /* place enemies */
     std::vector<enemy*> enemies;
 
+    int map_grid_pf[x_size * y_size];
     int count = 0;
     while (count < 5) {
         int x = rand() % x_size;
@@ -178,6 +164,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                           P_SPEED - 25, TILE_SIZE));
             (*(enemies.end() - 1))->frames_in_texture = 4;
             (*(enemies.end() - 1))->collision_box.y = TILE_SIZE / 2;
+            (*(enemies.end() - 1))->map = map_grid_pf;
+            *(tile_set.begin() + y * x_size + x) = 1;
             end_p.x = x;
             end_p.y = y;
             count++;
@@ -202,22 +190,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     std::vector<special_effect*> se;
 
-    /* pathfinding test */
-    int map_grid_pf[x_size * y_size];
     convert2d_array(map_grid, map_grid_pf, x_size, y_size);
-    int o_buff[x_size * y_size];
-    int s = AStarFindPath(start_p.x, start_p.y, end_p.x, end_p.y, map_grid_pf,
-                          x_size, y_size, o_buff, x_size * y_size);
+
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++)
-            std::cout << map_grid[y][x] << " ";
+            std::cout << map_grid[y * x_size + x] << " ";
         std::cout << std::endl;
     }
-    std::cout << start_p.x << " " << start_p.y << std::endl;
-    std::cout << end_p.x << " " << end_p.y << std::endl;
-    for (int i = 0; i < s; i++)
-        std::cout << o_buff[i] / x_size << " "
-                  << o_buff[i] - x_size * (o_buff[i] / x_size) << std::endl;
 
     /* animation test */
     instance* animated_block =
