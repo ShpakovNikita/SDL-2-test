@@ -96,6 +96,7 @@ bool check_collision(instance*, instance*);
 bool check_slow_collision(instance* one, instance* two, point*);
 
 float get_direction(float x1, float y1, float x2, float y2);
+float get_distance(float x1, float y1, float x2, float y2);
 bool ray_cast(const point&, const point&, const std::vector<instance*>& map);
 
 class texture {
@@ -121,6 +122,8 @@ class instance {
 
     vertex_2d position;
     vertex_2d size;
+
+    float weight = 1.0f;
 
     float alpha = 0;
     point rotation_point = point(0, 0);

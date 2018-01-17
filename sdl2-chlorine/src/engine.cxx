@@ -833,6 +833,12 @@ float get_direction(float x1, float y1, float x2, float y2) {
         return (M_PI + std::atan((float)dy / dx));
 }
 
+float get_distance(float x1, float y1, float x2, float y2) {
+    float dx = x1 - x2;
+    float dy = y2 - y1;
+    return std::sqrt(dx * dx + dy * dy);
+}
+
 bool ray_cast(const point& p1,
               const point& p2,
               const std::vector<instance*>& map) {

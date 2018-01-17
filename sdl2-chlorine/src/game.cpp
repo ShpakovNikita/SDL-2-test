@@ -19,6 +19,7 @@
 #include "headers/special_effect.h"
 #include "headers/autotile.hxx"
 #include "headers/pathfinders.h"
+#include "headers/collision_solves.hxx"
 
 enum class mode { draw, look, idle };
 
@@ -40,11 +41,6 @@ constexpr int FPS = 60;
 
 constexpr int P_SPEED = 32;
 constexpr int B_SPEED = 65;
-
-template <typename T>
-int sign(T val) {
-    return (T(0) < val) - (val < T(0));
-}
 
 int main(int /*argc*/, char* /*argv*/ []) {
     using namespace CHL;
@@ -114,6 +110,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         destroy_player);
     player->collision_box.y = TILE_SIZE / 2;    // /2;
     player->frames_in_texture = 4;
+    player->weight = 2;
 
     /* generate dungeon and place character */
 
@@ -171,7 +168,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<enemy*> enemies;
 
     int count = 0;
-    while (count < 1) {
+    while (count < 5) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
@@ -372,13 +369,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
         for (instance* inst : bricks) {
             if (check_collision(player.get(), inst)) {
                 std::cout << "Collide!" << std::endl;
-                player->position.x -= delta_x;
-                while (check_collision(player.get(), inst))
-                    player->position.y -= delta_y / 4;
-
-                player->position.x += delta_x;
-                while (check_collision(player.get(), inst))
-                    player->position.x -= delta_x / 4;
+                solve_dynamic_to_static_collision_fast(player.get(), inst,
+                                                       delta_x, delta_y);
             }
         }
 
@@ -401,32 +393,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
             e->destination.y = player->position.y - TILE_SIZE / 2;
             for (instance* inst : bricks) {
                 if (check_collision(e, inst)) {
-                    //                    std::cout << "Collide!" <<
-                    //                    std::endl;
-                    e->position.x -= e->delta_x;
-                    while (check_collision(e, inst))
-                        e->position.y -= e->delta_y / 4;
-
-                    e->position.x += delta_x;
-                    while (check_collision(e, inst))
-                        e->position.x -= e->delta_x / 4;
+                    solve_dynamic_to_static_collision_fast(e, inst, e->delta_x,
+                                                           e->delta_y);
                 }
             }
             if (check_collision(e, player.get())) {
                 //                std::cout << "Collide!" << std::endl;
-                e->position.x -= e->delta_x;
-                player->position.x -= delta_x;
-                while (check_collision(e, player.get())) {
-                    e->position.y -= e->delta_y / 4;
-                    player->position.y -= delta_y / 4;
-                }
-
-                e->position.x += delta_x;
-                player->position.x += delta_x;
-                while (check_collision(e, player.get())) {
-                    e->position.x -= e->delta_x / 4;
-                    player->position.x -= delta_x;
-                }
+                solve_dynamic_to_dynamic_collision_fast(
+                    player.get(), e, delta_x, delta_y, e->delta_x, e->delta_y);
             }
         }
 
@@ -445,7 +419,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
             b->update_points();
             point* intersection_point = new point();
             for (int j = 0; j < enemies.size(); j++) {
-                enemies[j]->update_points();
                 if (check_slow_collision(b, enemies[j], intersection_point)) {
                     delete *(bullets.begin() + i);
                     bullets.erase(bullets.begin() + i);
