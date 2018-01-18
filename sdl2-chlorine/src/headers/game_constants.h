@@ -36,3 +36,4 @@ constexpr int x_size = WINDOW_WIDTH / 4 / TILE_SIZE,
 
 extern std::vector<CHL::instance*> bricks;
 extern std::vector<bullet*> bullets;
+extern std::vector<CHL::life_form*> entities;

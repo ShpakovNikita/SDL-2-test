@@ -38,27 +38,27 @@ void pathfind(enemy* e) {
         e->position.x / TILE_SIZE, (e->position.y - 0.05f) / TILE_SIZE,
         e->destination.x / TILE_SIZE, (e->destination.y) / TILE_SIZE, e->map,
         x_size, y_size, o_buff, x_size * y_size);
-    std::cout << e->position.x / TILE_SIZE << " " << e->position.y / TILE_SIZE
-              << std::endl;
-    std::cout << e->destination.x / TILE_SIZE << " "
-              << e->destination.y / TILE_SIZE << std::endl;
+    //    std::cout << e->position.x / TILE_SIZE << " " << e->position.y /
+    //    TILE_SIZE
+    //              << std::endl;
+    //    std::cout << e->destination.x / TILE_SIZE << " "
+    //              << e->destination.y / TILE_SIZE << std::endl;
 
     if (s >= 1) {
         e->step_dest.y = (o_buff[0] / x_size) * TILE_SIZE - 4 + TILE_SIZE;
         e->step_dest.x =
             (o_buff[0] - x_size * (o_buff[0] / x_size)) * TILE_SIZE;
     }
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++)
-            std::cout << e->map[y * x_size + x] << " ";
-        std::cout << std::endl;
-    }
-    for (int i = 0; i < s; i++)
-        std::cout << (o_buff[i] / x_size) << " "
-                  << o_buff[i] - (o_buff[i] / x_size) * x_size << std::endl;
-    ;
-    std::cout << (int)e->step_dest.x / TILE_SIZE << " "
-              << (int)e->step_dest.y / TILE_SIZE << std::endl;
+    //    for (int y = 0; y < y_size; y++) {
+    //        for (int x = 0; x < x_size; x++)
+    //            std::cout << e->map[y * x_size + x] << " ";
+    //        std::cout << std::endl;
+    //    }
+    //    for (int i = 0; i < s; i++)
+    //        std::cout << (o_buff[i] / x_size) << " "
+    //                  << o_buff[i] - (o_buff[i] / x_size) * x_size <<
+    //                  std::endl;
+    //    ;
 }
 
 float change_sprite(enemy* e) {

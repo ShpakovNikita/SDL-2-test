@@ -168,6 +168,7 @@ class life_form : public instance {
     virtual ~life_form();
     virtual void move(float) = 0;
     int speed;
+    int health = 1;
 };
 life_form* create_player(std::vector<float>,
                          float x,

@@ -87,7 +87,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     bool placed = false;
     std::unique_ptr<life_form, void (*)(life_form*)> player(
-        create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE - 1),
+        create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE - 2),
         destroy_player);
     player->collision_box.y = TILE_SIZE / 2;    // /2;
     player->frames_in_texture = 4;
@@ -150,14 +150,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     int map_grid_pf[x_size * y_size];
     int count = 0;
-    while (count < 1) {
+    while (count < 5) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
             enemies.insert(
                 enemies.end(),
                 new enemy(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE, 0.0f,
-                          P_SPEED - 10, TILE_SIZE));
+                          P_SPEED - 17, TILE_SIZE - 2));
             (*(enemies.end() - 1))->frames_in_texture = 4;
             (*(enemies.end() - 1))->collision_box.y = TILE_SIZE / 2;
             (*(enemies.end() - 1))->map = map_grid_pf;
@@ -339,7 +339,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
         /// player collision
         for (instance* inst : bricks) {
             if (check_collision(player.get(), inst)) {
-                std::cout << "Collide!" << std::endl;
                 solve_dynamic_to_static_collision_fast(player.get(), inst,
                                                        delta_x, delta_y);
             }
@@ -354,14 +353,10 @@ int main(int /*argc*/, char* /*argv*/ []) {
         /// enemy collision
         for (enemy* e : enemies) {
             e->position.z_index = e->position.y;
-            //            if (ray_cast(point(e->position.x, e->position.y),
-            //            e->destination,
-            //                         bricks))
-            //                std::cout << "cast" << std::endl;
 
             e->move(delta_time);
             e->destination.x = player->position.x + TILE_SIZE / 2;
-            e->destination.y = player->position.y - TILE_SIZE / 2;
+            e->destination.y = player->position.y - TILE_SIZE / 4;
             for (instance* inst : bricks) {
                 if (check_collision(e, inst)) {
                     solve_dynamic_to_static_collision_fast(e, inst, e->delta_x,
@@ -369,7 +364,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 }
             }
             if (check_collision(e, player.get())) {
-                //                std::cout << "Collide!" << std::endl;
                 solve_dynamic_to_dynamic_collision_fast(
                     player.get(), e, delta_x, delta_y, e->delta_x, e->delta_y);
             }
@@ -406,7 +400,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     (*(se.end() - 1))->frames_in_texture = 8;
 
                     i--;
-                    goto mark;
+                    goto mark;    // just a bad architecture
                 }
             }
 
