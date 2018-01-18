@@ -4,10 +4,10 @@
  *  Created on: 17 янв. 2018 г.
  *      Author: Shaft
  */
+#pragma once
 
-#ifndef HEADERS_GAME_CONSTANTS_H_
-#define HEADERS_GAME_CONSTANTS_H_
 #include "engine.hxx"
+#include "bullet.h"
 
 #include <string>
 #include <vector>
@@ -35,5 +35,4 @@ constexpr int x_size = WINDOW_WIDTH / 4 / TILE_SIZE,
               y_size = WINDOW_HEIGHT / 4 / TILE_SIZE;
 
 extern std::vector<CHL::instance*> bricks;
-
-#endif /* HEADERS_GAME_CONSTANTS_H_ */
+extern std::vector<bullet*> bullets;

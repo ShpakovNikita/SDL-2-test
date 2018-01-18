@@ -36,8 +36,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
     eng->GL_clear_color();
     eng->GL_swap_buffers();
 
-    std::vector<CHL::instance*> bricks;
-
     int k = -1;
 
     /* loading textures */
@@ -79,8 +77,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
     bool keys[18];
     for (int i = 0; i < 18; i++)
         keys[i] = false;
-
-    std::vector<bullet*> bullets;
 
     DungeonGenerator generator(x_size, y_size);
     auto map = generator.Generate();
@@ -154,7 +150,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     int map_grid_pf[x_size * y_size];
     int count = 0;
-    while (count < 5) {
+    while (count < 1) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
@@ -165,6 +161,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
             (*(enemies.end() - 1))->frames_in_texture = 4;
             (*(enemies.end() - 1))->collision_box.y = TILE_SIZE / 2;
             (*(enemies.end() - 1))->map = map_grid_pf;
+            (*(enemies.end() - 1))->destination.x = player->position.x;
+            (*(enemies.end() - 1))->destination.y = player->position.y;
             *(tile_set.begin() + y * x_size + x) = 1;
             end_p.x = x;
             end_p.y = y;
@@ -191,12 +189,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<special_effect*> se;
 
     convert2d_array(map_grid, map_grid_pf, x_size, y_size);
-
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++)
-            std::cout << map_grid[y * x_size + x] << " ";
-        std::cout << std::endl;
-    }
 
     /* animation test */
     instance* animated_block =
