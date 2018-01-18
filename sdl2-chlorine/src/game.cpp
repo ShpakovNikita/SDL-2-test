@@ -157,7 +157,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
             enemies.insert(
                 enemies.end(),
                 new enemy(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE, 0.0f,
-                          P_SPEED - 25, TILE_SIZE));
+                          P_SPEED - 10, TILE_SIZE));
             (*(enemies.end() - 1))->frames_in_texture = 4;
             (*(enemies.end() - 1))->collision_box.y = TILE_SIZE / 2;
             (*(enemies.end() - 1))->map = map_grid_pf;
@@ -377,7 +377,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
         /// bullets collision
         int i = 0;
-        for (instance* b : bullets) {
+        for (bullet* b : bullets) {
             if (b->position.x + TILE_SIZE < 0 ||
                 b->position.x > WINDOW_WIDTH / 4 + TILE_SIZE ||
                 b->position.y + TILE_SIZE < 0 ||
@@ -390,7 +390,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
             b->update_points();
             point* intersection_point = new point();
             for (int j = 0; j < enemies.size(); j++) {
-                if (check_slow_collision(b, enemies[j], intersection_point)) {
+                if (check_slow_collision(b, enemies[j], intersection_point) &&
+                    b->creator != bullet_creator::enemy) {
                     delete *(bullets.begin() + i);
                     bullets.erase(bullets.begin() + i);
 

@@ -98,6 +98,8 @@ bool check_slow_collision(instance* one, instance* two, point*);
 float get_direction(float x1, float y1, float x2, float y2);
 float get_distance(float x1, float y1, float x2, float y2);
 bool ray_cast(const point&, const point&, const std::vector<instance*>& map);
+bool ray_cast(instance*, const point&, const std::vector<instance*>& map);
+bool ray_cast(instance*, instance*, const std::vector<instance*>& map);
 
 class texture {
    public:

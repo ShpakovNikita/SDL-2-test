@@ -853,4 +853,42 @@ bool ray_cast(const point& p1,
     }
     return true;
 }
+
+bool ray_cast(instance* mesh,
+              const point& p2,
+              const std::vector<instance*>& map) {
+    for (instance* inst : map) {
+        for (int j = 0; j < 4; j++) {
+            for (int i = 0; i < 4; i++) {
+                if (line_intersect(inst->mesh_points[i],
+                                   inst->mesh_points[(i + 1) % 4],
+                                   mesh->mesh_points[j], p2, nullptr)) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+bool ray_cast(instance* mesh_one,
+              instance* mesh_two,
+              const std::vector<instance*>& map) {
+    for (instance* inst : map) {
+        for (int k = 0; k < 4; k++) {
+            for (int j = 0; j < 4; j++) {
+                for (int i = 0; i < 4; i++) {
+                    if (line_intersect(inst->mesh_points[i],
+                                       inst->mesh_points[(i + 1) % 4],
+                                       mesh_one->mesh_points[j],
+                                       mesh_two->mesh_points[k], nullptr)) {
+                        return false;
+                    }
+                }
+            }
+        }
+    }
+    return true;
+}
+
 }    // namespace CHL
