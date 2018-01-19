@@ -402,59 +402,6 @@ instance* create_wall(std::vector<float> data,
     return inst;
 }
 
-class player : public life_form {
-   private:
-   public:
-    player(std::vector<float> data,
-           float x,
-           float y,
-           float z_index,
-           int speed,
-           int size)
-        : life_form(data, x, y, z_index, speed, size) {}
-
-    std::vector<float> get_vector() {
-        std::vector<float> v;
-        v = data;
-
-        for (int i = 0; i < data.size(); i++) {
-            v[i] += glm::floor(position.x) / t_size;
-            v[i + 1] += glm::floor(position.y) / t_size;
-        }
-
-        return v;
-    }
-
-    void move(float dt) override {}
-};
-
-bool player_exist = false;
-
-life_form* create_player(std::vector<float> data,
-                         float x,
-                         float y,
-                         float z,
-                         int _speed,
-                         int size) {
-    if (player_exist) {
-        throw std::runtime_error("player already exist");
-    }
-
-    life_form* inst = new player(data, x, y, z, _speed, size);
-    player_exist = true;
-    return inst;
-}
-
-void destroy_player(life_form* i) {
-    if (player_exist == false) {
-        throw std::runtime_error("player is not created");
-    }
-    if (nullptr == i) {
-        throw std::runtime_error("player is null");
-    }
-    delete i;
-}
-
 class engine_impl final : public engine {
    private:
     event_type e_type = event_type::other;

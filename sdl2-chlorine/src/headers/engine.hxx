@@ -171,13 +171,6 @@ class life_form : public instance {
     int health = 1;
     float delta_x = 0, delta_y = 0;
 };
-life_form* create_player(std::vector<float>,
-                         float x,
-                         float y,
-                         float z,
-                         int _speed,
-                         int size);
-void destroy_player(life_form*);
 
 instance* create_wall(std::vector<float> data,
                       float x,

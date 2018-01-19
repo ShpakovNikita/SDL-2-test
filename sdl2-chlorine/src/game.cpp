@@ -20,6 +20,7 @@
 #include "headers/autotile.hxx"
 #include "headers/pathfinders.h"
 #include "headers/collision_solves.hxx"
+#include "headers/player.h"
 
 #include "headers/game_constants.h"
 
@@ -86,14 +87,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
     int Y_MAP = WINDOW_HEIGHT / TILE_SIZE;
 
     bool placed = false;
-    std::unique_ptr<life_form, void (*)(life_form*)> player(
-        create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE),
-        destroy_player);
-    player->collision_box.y = TILE_SIZE / 2;    // /2;
-    player->frames_in_texture = 4;
-    player->weight = 2;
+    player* hero = new player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE);
+    hero->collision_box.y = TILE_SIZE / 2;    // /2;
+    hero->frames_in_texture = 4;
+    hero->weight = 2;
 
-    entities.insert(entities.end(), player.get());
+    entities.insert(entities.end(), hero);
     /* generate dungeon and place character */
 
     instance*** grid;
@@ -122,8 +121,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 (*(bricks.end() - 1))->selected_tileset = default_tileset;
                 grid[y][x] = *(bricks.end() - 1);
             } else if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
-                player->position.x = x * TILE_SIZE;
-                player->position.y = y * TILE_SIZE + TILE_SIZE;
+                hero->position.x = x * TILE_SIZE;
+                hero->position.y = y * TILE_SIZE + TILE_SIZE;
                 placed = true;
                 *(tile_set.begin() + y * x_size + x) = 1;
                 start_p.x = x;
@@ -163,9 +162,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
             (*(entities.end() - 1))->collision_box.y = TILE_SIZE / 2;
             dynamic_cast<enemy*>(*(entities.end() - 1))->map = map_grid_pf;
             dynamic_cast<enemy*>(*(entities.end() - 1))->destination.x =
-                player->position.x;
+                hero->position.x;
             dynamic_cast<enemy*>(*(entities.end() - 1))->destination.y =
-                player->position.y;
+                hero->position.y;
             *(tile_set.begin() + y * x_size + x) = 1;
             end_p.x = x;
             end_p.y = y;
@@ -222,15 +221,15 @@ int main(int /*argc*/, char* /*argv*/ []) {
                             bullets.insert(
                                 bullets.end(),
                                 new bullet(data,
-                                           player->position.x + TILE_SIZE / 2,
-                                           player->position.y - TILE_SIZE / 2,
+                                           hero->position.x + TILE_SIZE / 2,
+                                           hero->position.y - TILE_SIZE / 2,
                                            0.0f, 8, 0, 2));
                             (*(bullets.end() - 1))->alpha =
                                 2 * M_PI * i / 32.0f;
                             (*(bullets.end() - 1))->speed = B_SPEED;
                             (*(bullets.end() - 1))->rotation_point =
-                                point(player->position.x + TILE_SIZE / 2,
-                                      player->position.y - TILE_SIZE / 2);
+                                point(hero->position.x + TILE_SIZE / 2,
+                                      hero->position.y - TILE_SIZE / 2);
                             delay = 1;
                         }
                         shot_sound.play();
@@ -244,14 +243,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
                         bullets.insert(
                             bullets.end(),
                             new bullet(data,
-                                       player->position.x + shooting_point.x,
-                                       player->position.y + shooting_point.y,
+                                       hero->position.x + shooting_point.x,
+                                       hero->position.y + shooting_point.y,
                                        0.0f, 8, 0, 2));
                         (*(bullets.end() - 1))->alpha = alpha;
                         (*(bullets.end() - 1))->speed = B_SPEED;
                         (*(bullets.end() - 1))->rotation_point =
-                            point(player->position.x + TILE_SIZE / 2,
-                                  player->position.y - TILE_SIZE / 2);
+                            point(hero->position.x + TILE_SIZE / 2,
+                                  hero->position.y - TILE_SIZE / 2);
                         shot_sound.play();
                         delay = 0.7;
                     }
@@ -272,21 +271,21 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
         /*calculate angle*/
         alpha = get_direction(eng->get_mouse_pos().x, eng->get_mouse_pos().y,
-                              player->position.x + TILE_SIZE / 2,
-                              player->position.y - TILE_SIZE / 2);
+                              hero->position.x + TILE_SIZE / 2,
+                              hero->position.y - TILE_SIZE / 2);
 
         if (alpha > (3 * M_PI_2 + M_PI_4) || alpha <= M_PI_4) {
             shooting_point = point(15, -8);
-            player->selected_frame = 0;
+            hero->selected_frame = 0;
         } else if (alpha > M_PI_4 && alpha <= M_PI_2 + M_PI_4) {
             shooting_point = point(TILE_SIZE / 2 + 4, -TILE_SIZE);
-            player->selected_frame = 3;
+            hero->selected_frame = 3;
         } else if (alpha > M_PI_2 + M_PI_4 && alpha < M_PI + M_PI_4) {
             shooting_point = point(1, -16);
-            player->selected_frame = 1;
+            hero->selected_frame = 1;
         } else {
             shooting_point = point(TILE_SIZE / 2 - 4, -4);
-            player->selected_frame = 2;
+            hero->selected_frame = 2;
         }
 
         /*smooth moving*/
@@ -295,19 +294,19 @@ int main(int /*argc*/, char* /*argv*/ []) {
         float delta_y = 0;
         if (keys[static_cast<int>(event::left_pressed)]) {
             moved = true;
-            delta_x = -player->speed * delta_time;
+            delta_x = -hero->speed * delta_time;
         }
         if (keys[static_cast<int>(event::right_pressed)]) {
             moved = true;
-            delta_x = player->speed * delta_time;
+            delta_x = hero->speed * delta_time;
         }
         if (keys[static_cast<int>(event::up_pressed)]) {
             moved = true;
-            delta_y = -player->speed * delta_time;
+            delta_y = -hero->speed * delta_time;
         }
         if (keys[static_cast<int>(event::down_pressed)]) {
             moved = true;
-            delta_y = player->speed * delta_time;
+            delta_y = hero->speed * delta_time;
         }
 
         if (delta_x != 0 && delta_y != 0) {
@@ -318,11 +317,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
             k *= -1;
         }
 
-        player->delta_x = delta_x;
-        player->delta_y = delta_y;
-        player->position.x += delta_x;
-        player->position.y += delta_y;
-        player->position.z_index = player->position.y;
+        hero->delta_x = delta_x;
+        hero->delta_y = delta_y;
+        hero->position.x += delta_x;
+        hero->position.y += delta_y;
+        hero->position.z_index = hero->position.y;
 
         /* play music */
         if (moved && one_time_change) {
@@ -342,15 +341,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
         /* check collisions */
 
         /// player & enemy collision
-        std::cout << "entering hard zone" << std::endl;
         int tst = 0;
         for (life_form* lf : entities) {
             lf->position.z_index = lf->position.y;
             enemy* e = dynamic_cast<enemy*>(lf);
             if (e != nullptr) {
                 e->move(delta_time);
-                e->destination.x = player->position.x + TILE_SIZE / 2;
-                e->destination.y = player->position.y - TILE_SIZE / 4;
+                e->destination.x = hero->position.x + TILE_SIZE / 2;
+                e->destination.y = hero->position.y - TILE_SIZE / 4;
             }
             for (instance* inst : bricks) {
                 if (check_collision(lf, inst)) {
@@ -358,19 +356,17 @@ int main(int /*argc*/, char* /*argv*/ []) {
                         lf, inst, lf->delta_x, lf->delta_y);
                 }
             }
-            std::cout << tst << " ";
             tst++;
         }
-        std::cout << "leaving hard zone" << std::endl;
-
-        if (player->position.x < 0 || player->position.x > WINDOW_WIDTH / 4)
-            player->position.x -= delta_x;
-        if (player->position.y - TILE_SIZE < 0 ||
-            player->position.y > WINDOW_HEIGHT / 4)
-            player->position.y -= delta_y;
+        if (hero->position.x < 0 || hero->position.x > WINDOW_WIDTH / 4)
+            hero->position.x -= delta_x;
+        if (hero->position.y - TILE_SIZE < 0 ||
+            hero->position.y > WINDOW_HEIGHT / 4)
+            hero->position.y -= delta_y;
 
         /// bullets collision
         int i = 0;
+        hero->update_points();
         for (bullet* b : bullets) {
             if (b->position.x + TILE_SIZE < 0 ||
                 b->position.x > WINDOW_WIDTH / 4 + TILE_SIZE ||
@@ -383,26 +379,54 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
             b->update_points();
             point* intersection_point = new point();
-            for (int j = 0; j < enemies.size(); j++) {
-                if (check_slow_collision(b, enemies[j], intersection_point) &&
-                    b->creator != bullet_creator::enemy) {
-                    delete *(bullets.begin() + i);
-                    bullets.erase(bullets.begin() + i);
 
-                    delete *(enemies.begin() + j);
-                    enemies.erase(enemies.begin() + j);
+            bool smth_destroyed = false;
+            for (int j = 0; j < entities.size(); j++) {
+                if (check_slow_collision(b, entities[j], intersection_point)) {
+                    if (dynamic_cast<enemy*>(entities[j]) != nullptr &&
+                        b->creator != bullet_creator::enemy) {
+                        delete *(bullets.begin() + i);
+                        bullets.erase(bullets.begin() + i);
 
-                    se.insert(se.end(),
-                              new special_effect(
-                                  data, intersection_point->x - TILE_SIZE / 2,
-                                  intersection_point->y + TILE_SIZE / 2,
-                                  MIN_DEPTH, TILE_SIZE));
-                    (*(se.end() - 1))->frames_in_texture = 8;
+                        if (--entities[j]->health <= 0) {
+                            delete *(entities.begin() + j);
+                            entities.erase(entities.begin() + j);
+                        }
 
-                    i--;
-                    goto mark;    // just a bad architecture
+                        se.insert(
+                            se.end(),
+                            new special_effect(
+                                data, intersection_point->x - TILE_SIZE / 2,
+                                intersection_point->y + TILE_SIZE / 2,
+                                MIN_DEPTH, TILE_SIZE));
+                        (*(se.end() - 1))->frames_in_texture = 8;
+                        j = entities.size();
+                        smth_destroyed = true;
+                        i--;
+                    } else if (dynamic_cast<player*>(entities[j]) != nullptr &&
+                               b->creator == bullet_creator::enemy) {
+                        delete *(bullets.begin() + i);
+                        bullets.erase(bullets.begin() + i);
+                        i--;
+
+                        se.insert(
+                            se.end(),
+                            new special_effect(
+                                data, intersection_point->x - TILE_SIZE / 2,
+                                intersection_point->y + TILE_SIZE / 2,
+                                MIN_DEPTH, TILE_SIZE));
+                        (*(se.end() - 1))->frames_in_texture = 8;
+                        if (--entities[j]->health <= 0) {
+                            quit = true;
+                        }
+                        j = entities.size();
+                        smth_destroyed = true;
+                    }
                 }
             }
+
+            if (smth_destroyed)
+                continue;
 
             for (instance* brick : bricks) {
                 if (check_slow_collision(b, brick, intersection_point)) {
@@ -420,7 +444,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     break;
                 }
             }
-        mark:
             i++;
         }
 
@@ -454,7 +477,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         if (!bullets.empty())
             eng->draw(bullet_tex);
 
-        eng->add_object(player.get());
+        eng->add_object(hero);
         eng->draw(player_tex);
 
         for (auto e : entities) {

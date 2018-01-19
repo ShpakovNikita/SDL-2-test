@@ -22,6 +22,7 @@ void smart_move(enemy* e);
 enemy::enemy(std::vector<float> d, float x, float y, float z, int _speed, int s)
     : life_form(d, x, y, z, _speed, s) {
     // TODO Auto-generated constructor stub
+    health = 3;
     state = smart_move;
     step_dest.x = position.x;
     step_dest.y = position.y;
