@@ -169,6 +169,7 @@ class life_form : public instance {
     virtual void move(float) = 0;
     int speed;
     int health = 1;
+    float delta_x = 0, delta_y = 0;
 };
 life_form* create_player(std::vector<float>,
                          float x,
@@ -214,7 +215,7 @@ class engine {
     virtual void CHL_exit() = 0;
     virtual point get_mouse_pos() = 0;
     virtual void add_object(instance*) = 0;
-    virtual void draw(instance*, texture*) = 0;
+    virtual void draw(texture*) = 0;
     virtual void set_virtual_pixel(int, int) = 0;
     //    virtual bool load_texture(std::string) = 0;
     virtual event_type get_event_type() = 0;

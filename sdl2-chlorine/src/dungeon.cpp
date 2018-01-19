@@ -187,7 +187,7 @@ class DungeonGenerator {
         assert(XSize > 3 && XSize <= 80);
         assert(YSize > 3 && YSize <= 25);
         std::srand(time(nullptr));
-        Seed = rand() % 100000000;
+        Seed = rand() % 1000000000;
 
         auto rng = RngT(Seed);
         std::cout << Seed << std::endl;

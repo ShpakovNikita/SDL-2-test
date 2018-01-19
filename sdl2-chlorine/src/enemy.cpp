@@ -11,6 +11,7 @@
 #include "headers/pathfinders.h"
 #include "headers/game_constants.h"
 
+std::vector<CHL::life_form*> entities;
 std::vector<CHL::instance*> bricks;
 std::vector<bullet*> bullets;
 

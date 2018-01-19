@@ -87,12 +87,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     bool placed = false;
     std::unique_ptr<life_form, void (*)(life_form*)> player(
-        create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE - 2),
+        create_player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE),
         destroy_player);
     player->collision_box.y = TILE_SIZE / 2;    // /2;
     player->frames_in_texture = 4;
     player->weight = 2;
 
+    entities.insert(entities.end(), player.get());
     /* generate dungeon and place character */
 
     instance*** grid;
@@ -154,15 +155,17 @@ int main(int /*argc*/, char* /*argv*/ []) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
-            enemies.insert(
-                enemies.end(),
+            entities.insert(
+                entities.end(),
                 new enemy(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE, 0.0f,
-                          P_SPEED - 17, TILE_SIZE - 2));
-            (*(enemies.end() - 1))->frames_in_texture = 4;
-            (*(enemies.end() - 1))->collision_box.y = TILE_SIZE / 2;
-            (*(enemies.end() - 1))->map = map_grid_pf;
-            (*(enemies.end() - 1))->destination.x = player->position.x;
-            (*(enemies.end() - 1))->destination.y = player->position.y;
+                          P_SPEED - 17, TILE_SIZE));
+            (*(entities.end() - 1))->frames_in_texture = 4;
+            (*(entities.end() - 1))->collision_box.y = TILE_SIZE / 2;
+            dynamic_cast<enemy*>(*(entities.end() - 1))->map = map_grid_pf;
+            dynamic_cast<enemy*>(*(entities.end() - 1))->destination.x =
+                player->position.x;
+            dynamic_cast<enemy*>(*(entities.end() - 1))->destination.y =
+                player->position.y;
             *(tile_set.begin() + y * x_size + x) = 1;
             end_p.x = x;
             end_p.y = y;
@@ -315,6 +318,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
             k *= -1;
         }
 
+        player->delta_x = delta_x;
+        player->delta_y = delta_y;
         player->position.x += delta_x;
         player->position.y += delta_y;
         player->position.z_index = player->position.y;
@@ -336,38 +341,33 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
         /* check collisions */
 
-        /// player collision
-        for (instance* inst : bricks) {
-            if (check_collision(player.get(), inst)) {
-                solve_dynamic_to_static_collision_fast(player.get(), inst,
-                                                       delta_x, delta_y);
+        /// player & enemy collision
+        std::cout << "entering hard zone" << std::endl;
+        int tst = 0;
+        for (life_form* lf : entities) {
+            lf->position.z_index = lf->position.y;
+            enemy* e = dynamic_cast<enemy*>(lf);
+            if (e != nullptr) {
+                e->move(delta_time);
+                e->destination.x = player->position.x + TILE_SIZE / 2;
+                e->destination.y = player->position.y - TILE_SIZE / 4;
             }
+            for (instance* inst : bricks) {
+                if (check_collision(lf, inst)) {
+                    solve_dynamic_to_static_collision_fast(
+                        lf, inst, lf->delta_x, lf->delta_y);
+                }
+            }
+            std::cout << tst << " ";
+            tst++;
         }
+        std::cout << "leaving hard zone" << std::endl;
 
         if (player->position.x < 0 || player->position.x > WINDOW_WIDTH / 4)
             player->position.x -= delta_x;
         if (player->position.y - TILE_SIZE < 0 ||
             player->position.y > WINDOW_HEIGHT / 4)
             player->position.y -= delta_y;
-
-        /// enemy collision
-        for (enemy* e : enemies) {
-            e->position.z_index = e->position.y;
-
-            e->move(delta_time);
-            e->destination.x = player->position.x + TILE_SIZE / 2;
-            e->destination.y = player->position.y - TILE_SIZE / 4;
-            for (instance* inst : bricks) {
-                if (check_collision(e, inst)) {
-                    solve_dynamic_to_static_collision_fast(e, inst, e->delta_x,
-                                                           e->delta_y);
-                }
-            }
-            if (check_collision(e, player.get())) {
-                solve_dynamic_to_dynamic_collision_fast(
-                    player.get(), e, delta_x, delta_y, e->delta_x, e->delta_y);
-            }
-        }
 
         /// bullets collision
         int i = 0;
@@ -438,13 +438,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
             eng->add_object(tile);
 
         if (!floor.empty())
-            eng->draw(*floor.begin(), floor_tex);
+            eng->draw(floor_tex);
 
         for (auto brick : bricks)
             eng->add_object(brick);
 
         if (!bricks.empty())
-            eng->draw(*bricks.begin(), brick_tex);
+            eng->draw(brick_tex);
 
         for (auto bullet : bullets) {
             bullet->move(delta_time);
@@ -452,16 +452,17 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         if (!bullets.empty())
-            eng->draw(*bullets.begin(), bullet_tex);
+            eng->draw(bullet_tex);
 
         eng->add_object(player.get());
-        eng->draw(player.get(), player_tex);
+        eng->draw(player_tex);
 
-        for (auto enemy : enemies) {
-            eng->add_object(enemy);
+        for (auto e : entities) {
+            if (dynamic_cast<enemy*>(e) != nullptr)
+                eng->add_object(e);
         }
-        if (!enemies.empty())
-            eng->draw(*enemies.begin(), player_tex);
+        if (!entities.empty())
+            eng->draw(player_tex);
 
         for (auto effect : se) {
             effect->update_frame();
@@ -469,11 +470,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         if (!se.empty())
-            eng->draw(*se.begin(), explosion_tex);
+            eng->draw(explosion_tex);
 
         animated_block->update();
         eng->add_object(animated_block);
-        eng->draw(animated_block, obelisk_tex);
+        eng->draw(obelisk_tex);
 
         eng->GL_swap_buffers();
 

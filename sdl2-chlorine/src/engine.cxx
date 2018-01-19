@@ -630,7 +630,7 @@ class engine_impl final : public engine {
         virtual_h = _h;
     };
 
-    void draw(instance* object, texture* text) final {
+    void draw(texture* text) final {
         glUseProgram(shader_program);
 
         text->bind();

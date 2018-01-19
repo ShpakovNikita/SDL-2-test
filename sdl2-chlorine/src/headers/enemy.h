@@ -28,7 +28,6 @@ class enemy : public CHL::life_form {
     CHL::point shooting_point;
 
     int* map;
-    float delta_x, delta_y;
     float shooting_alpha;
 
     void move(float) override;
