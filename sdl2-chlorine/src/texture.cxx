@@ -7,6 +7,10 @@
 
 namespace CHL {
 texture::texture() {}
+texture::texture(const std::string& path) {
+    if (!load_texture(path))
+        std::cerr << "Texture not found!" << std::endl;
+}
 texture::~texture() {}
 
 bool texture::load_texture(const std::string& path) {

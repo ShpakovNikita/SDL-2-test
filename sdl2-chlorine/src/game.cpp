@@ -37,32 +37,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
     eng->GL_clear_color();
     eng->GL_swap_buffers();
 
-    int k = -1;
-
     /* loading textures */
-    texture* brick_tex = new texture();
-    if (!brick_tex->load_texture("test.png"))
-        std::cerr << "Texture not found!" << std::endl;
 
-    texture* player_tex = new texture();
-    if (!player_tex->load_texture("tank.png"))
-        std::cerr << "Texture not found!" << std::endl;
-
-    texture* floor_tex = new texture();
-    if (!floor_tex->load_texture("tiles.png"))
-        std::cerr << "Texture not found!" << std::endl;
-
-    texture* bullet_tex = new texture();
-    if (!bullet_tex->load_texture("bullet.png"))
-        std::cerr << "Texture not found!" << std::endl;
-
-    texture* explosion_tex = new texture();
-    if (!explosion_tex->load_texture("explosion-6.png"))
-        std::cerr << "Texture not found!" << std::endl;
-
-    texture* obelisk_tex = new texture();
-    if (!obelisk_tex->load_texture("obelisk.png"))
-        std::cerr << "Texture not found!" << std::endl;
+    manager.add_texture("brick", new texture("test.png"));
+    manager.add_texture("player", new texture("tank.png"));
+    manager.add_texture("floor", new texture("tiles.png"));
+    manager.add_texture("bullet", new texture("bullet.png"));
+    manager.add_texture("explosion", new texture("explosion-6.png"));
+    manager.add_texture("obelisk", new texture("obelisk.png"));
 
     std::ifstream fin(VERTEX_FILE);
     assert(!!fin);
@@ -72,12 +54,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<float> data;
     for (auto t : t_arr)
         convert_triangle(t, data);
-
-    mode current_mode = mode::idle;
-
-    bool keys[18];
-    for (int i = 0; i < 18; i++)
-        keys[i] = false;
 
     DungeonGenerator generator(x_size, y_size);
     auto map = generator.Generate();
@@ -105,7 +81,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
     for (int i = 0; i < y_size; i++)
         map_grid[i] = new int[x_size];
 
-    point start_p, end_p;
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
             grid[y][x] = nullptr;
@@ -125,8 +100,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 hero->position.y = y * TILE_SIZE + TILE_SIZE;
                 placed = true;
                 *(tile_set.begin() + y * x_size + x) = 1;
-                start_p.x = x;
-                start_p.y = y;
             }
         }
     }
@@ -150,7 +123,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     int map_grid_pf[x_size * y_size];
     int count = 0;
-    while (count < 5) {
+    while (count < 1) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
@@ -166,23 +139,15 @@ int main(int /*argc*/, char* /*argv*/ []) {
             dynamic_cast<enemy*>(*(entities.end() - 1))->destination.y =
                 hero->position.y;
             *(tile_set.begin() + y * x_size + x) = 1;
-            end_p.x = x;
-            end_p.y = y;
             count++;
         }
     }
-    sound start_music(SND_FOLDER + START_MUSIC);
-    sound idle_sound(SND_FOLDER + IDLE_SOUND);
-    sound move_sound(SND_FOLDER + MOVE_SOUND);
-    sound shot_sound(SND_FOLDER + "shot.wav");
-    idle_sound.play_always();
-    //    start_music.play_always();
-
-    bool one_time_change = true;
-
-    float alpha = 0;
-
-    float delay = 0;
+    manager.add_sound("start_music", new sound(SND_FOLDER + START_MUSIC));
+    manager.add_sound("idle_sound", new sound(SND_FOLDER + IDLE_SOUND));
+    manager.add_sound("move_sound", new sound(SND_FOLDER + MOVE_SOUND));
+    manager.add_sound("shot_sound", new sound(SND_FOLDER + "shot.wav"));
+    manager.get_sound("idle_sound")->play_always();
+    manager.get_sound("start_music")->play_always();
 
     point shooting_point = point(14, -9);
     float prev_frame = eng->GL_time();
@@ -216,127 +181,27 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     quit = true;
                     break;
                 case event::button1_pressed:
-                    if (delay <= 0) {
-                        for (int i = 0; i < 33; i++) {
-                            bullets.insert(
-                                bullets.end(),
-                                new bullet(data,
-                                           hero->position.x + TILE_SIZE / 2,
-                                           hero->position.y - TILE_SIZE / 2,
-                                           0.0f, 8, 0, 2));
-                            (*(bullets.end() - 1))->alpha =
-                                2 * M_PI * i / 32.0f;
-                            (*(bullets.end() - 1))->speed = B_SPEED;
-                            (*(bullets.end() - 1))->rotation_point =
-                                point(hero->position.x + TILE_SIZE / 2,
-                                      hero->position.y - TILE_SIZE / 2);
-                            delay = 1;
-                        }
-                        shot_sound.play();
-                    }
+                    hero->super_fire();
                     break;
-                case event::start_pressed:
-                    current_mode = mode::look;
-                    break;
+
                 case event::left_mouse_pressed:
-                    if (delay <= 0) {
-                        bullets.insert(
-                            bullets.end(),
-                            new bullet(data,
-                                       hero->position.x + shooting_point.x,
-                                       hero->position.y + shooting_point.y,
-                                       0.0f, 8, 0, 2));
-                        (*(bullets.end() - 1))->alpha = alpha;
-                        (*(bullets.end() - 1))->speed = B_SPEED;
-                        (*(bullets.end() - 1))->rotation_point =
-                            point(hero->position.x + TILE_SIZE / 2,
-                                  hero->position.y - TILE_SIZE / 2);
-                        shot_sound.play();
-                        delay = 0.7;
-                    }
+                    hero->fire();
                     break;
                 default:
                     break;
             }
 
             if (eng->get_event_type() == event_type::pressed) {
-                keys[static_cast<int>(e)] = true;
+                hero->keys[static_cast<int>(e)] = true;
             } else {
-                keys[static_cast<int>(e) - 1] = false;
+                hero->keys[static_cast<int>(e) - 1] = false;
             }
         }
-
-        if (delay > 0)
-            delay -= delta_time;
+        hero->move(delta_time);
 
         /*calculate angle*/
-        alpha = get_direction(eng->get_mouse_pos().x, eng->get_mouse_pos().y,
-                              hero->position.x + TILE_SIZE / 2,
-                              hero->position.y - TILE_SIZE / 2);
-
-        if (alpha > (3 * M_PI_2 + M_PI_4) || alpha <= M_PI_4) {
-            shooting_point = point(15, -8);
-            hero->selected_frame = 0;
-        } else if (alpha > M_PI_4 && alpha <= M_PI_2 + M_PI_4) {
-            shooting_point = point(TILE_SIZE / 2 + 4, -TILE_SIZE);
-            hero->selected_frame = 3;
-        } else if (alpha > M_PI_2 + M_PI_4 && alpha < M_PI + M_PI_4) {
-            shooting_point = point(1, -16);
-            hero->selected_frame = 1;
-        } else {
-            shooting_point = point(TILE_SIZE / 2 - 4, -4);
-            hero->selected_frame = 2;
-        }
-
-        /*smooth moving*/
-        bool moved = false;
-        float delta_x = 0;
-        float delta_y = 0;
-        if (keys[static_cast<int>(event::left_pressed)]) {
-            moved = true;
-            delta_x = -hero->speed * delta_time;
-        }
-        if (keys[static_cast<int>(event::right_pressed)]) {
-            moved = true;
-            delta_x = hero->speed * delta_time;
-        }
-        if (keys[static_cast<int>(event::up_pressed)]) {
-            moved = true;
-            delta_y = -hero->speed * delta_time;
-        }
-        if (keys[static_cast<int>(event::down_pressed)]) {
-            moved = true;
-            delta_y = hero->speed * delta_time;
-        }
-
-        if (delta_x != 0 && delta_y != 0) {
-            delta_x = delta_x / std::sqrt(2);
-            delta_y = sign(delta_y) * std::fabs(delta_x);
-        } else if (delta_x == 0 && delta_y == 0) {
-            /*delta_y = (float)k * 4 / TILE_SIZE;*/
-            k *= -1;
-        }
-
-        hero->delta_x = delta_x;
-        hero->delta_y = delta_y;
-        hero->position.x += delta_x;
-        hero->position.y += delta_y;
-        hero->position.z_index = hero->position.y;
-
-        /* play music */
-        if (moved && one_time_change) {
-            idle_sound.stop();
-            move_sound.play_always();
-            std::cout << "move" << std::endl;
-            one_time_change = false;
-        }
-
-        if (!moved && !one_time_change) {
-            idle_sound.play_always();
-            move_sound.stop();
-            std::cout << "stop" << std::endl;
-            one_time_change = true;
-        }
+        hero->mouth_cursor.x = eng->get_mouse_pos().x;
+        hero->mouth_cursor.y = eng->get_mouse_pos().y;
 
         /* check collisions */
 
@@ -358,13 +223,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
             }
             tst++;
         }
-        if (hero->position.x < 0 || hero->position.x > WINDOW_WIDTH / 4)
-            hero->position.x -= delta_x;
-        if (hero->position.y - TILE_SIZE < 0 ||
-            hero->position.y > WINDOW_HEIGHT / 4)
-            hero->position.y -= delta_y;
 
-        /// bullets collision
         int i = 0;
         hero->update_points();
         for (bullet* b : bullets) {
@@ -461,13 +320,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
             eng->add_object(tile);
 
         if (!floor.empty())
-            eng->draw(floor_tex);
+            eng->draw(manager.get_texture("floor"));
 
         for (auto brick : bricks)
             eng->add_object(brick);
 
         if (!bricks.empty())
-            eng->draw(brick_tex);
+            eng->draw(manager.get_texture("brick"));
 
         for (auto bullet : bullets) {
             bullet->move(delta_time);
@@ -475,17 +334,17 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         if (!bullets.empty())
-            eng->draw(bullet_tex);
+            eng->draw(manager.get_texture("bullet"));
 
         eng->add_object(hero);
-        eng->draw(player_tex);
+        eng->draw(manager.get_texture("player"));
 
         for (auto e : entities) {
             if (dynamic_cast<enemy*>(e) != nullptr)
                 eng->add_object(e);
         }
         if (!entities.empty())
-            eng->draw(player_tex);
+            eng->draw(manager.get_texture("player"));
 
         for (auto effect : se) {
             effect->update_frame();
@@ -493,11 +352,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         if (!se.empty())
-            eng->draw(explosion_tex);
+            eng->draw(manager.get_texture("explosion"));
 
         animated_block->update();
         eng->add_object(animated_block);
-        eng->draw(obelisk_tex);
+        eng->draw(manager.get_texture("obelisk"));
 
         eng->GL_swap_buffers();
 

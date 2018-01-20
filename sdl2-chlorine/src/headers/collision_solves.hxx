@@ -9,11 +9,7 @@
 #define HEADERS_COLLISION_SOLVES_HXX_
 
 #include "engine.hxx"
-
-template <typename T>
-int sign(T val) {
-    return (T(0) < val) - (val < T(0));
-}
+#include "game_functions.hxx"
 
 void solve_dynamic_to_dynamic_collision_fast(CHL::instance* one,
                                              CHL::instance* two,

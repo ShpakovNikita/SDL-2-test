@@ -10,10 +10,12 @@
 #include <iostream>
 #include "headers/pathfinders.h"
 #include "headers/game_constants.h"
+#include "headers/game_functions.hxx"
 
 std::vector<CHL::life_form*> entities;
 std::vector<CHL::instance*> bricks;
 std::vector<bullet*> bullets;
+resource_manager manager;
 
 void stall(enemy* e);
 void chase(enemy* e);
@@ -79,19 +81,6 @@ float change_sprite(enemy* e) {
     } else {
         e->shooting_point = CHL::point(e->size.x / 2 - 4, -4);
         e->selected_frame = 2;
-    }
-    return a;
-}
-
-float calculate_alpha_precision(float a) {
-    if (a > (3 * M_PI_2 + M_PI_4) || a <= M_PI_4) {
-        a -= 0.08;
-    } else if (a > M_PI_4 && a <= M_PI_2 + M_PI_4) {
-        a += 0.08;
-    } else if (a > M_PI_2 + M_PI_4 && a < M_PI + M_PI_4) {
-        a += 0.08;
-    } else {
-        a -= 0.08;
     }
     return a;
 }

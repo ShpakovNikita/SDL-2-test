@@ -103,6 +103,7 @@ bool ray_cast(instance*, instance*, const std::vector<instance*>& map);
 
 class texture {
    public:
+    texture(const std::string&);
     texture();
     ~texture();
 
