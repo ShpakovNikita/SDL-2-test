@@ -185,7 +185,7 @@ class DungeonGenerator {
         // TODO: proper input validation.
         assert(MaxFeatures > 0 && MaxFeatures <= 100);
         assert(XSize > 3 && XSize <= 80);
-        assert(YSize > 3 && YSize <= 25);
+        assert(YSize > 3 && YSize <= 50);
         std::srand(time(nullptr));
         Seed = rand() % 1000000000;
 

@@ -149,9 +149,9 @@ void player::move(float dt) {
     position.y += delta_y;
     position.x += delta_x;
 
-    if (position.x < 0 || position.x > WINDOW_WIDTH / 4)
+    if (position.x < 0 || position.x > WINDOW_WIDTH / 2)
         position.x -= delta_x;
-    if (position.y - TILE_SIZE < 0 || position.y > WINDOW_HEIGHT / 4)
+    if (position.y - TILE_SIZE < 0 || position.y > WINDOW_HEIGHT / 2)
         position.y -= delta_y;
 
     if (shoot_delay > 0)

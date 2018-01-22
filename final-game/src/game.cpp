@@ -32,7 +32,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
                                                    destroy_engine);
 
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE, FPS);
-    eng->set_virtual_pixel(WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4);
+    eng->set_virtual_pixel(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
 
     eng->GL_clear_color();
     eng->GL_swap_buffers();
@@ -60,15 +60,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
     auto map = generator.Generate();
     std::vector<int> tile_set = map.Print();
 
-    int X_MAP = WINDOW_WIDTH / TILE_SIZE;
-    int Y_MAP = WINDOW_HEIGHT / TILE_SIZE;
-
     bool placed = false;
     player* hero = new player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE);
     hero->weight = 2;
 
     camera* main_camera = new camera(WINDOW_WIDTH / 8, WINDOW_HEIGHT / 8,
-                                     WINDOW_WIDTH / 4, WINDOW_HEIGHT / 4, hero);
+                                     WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, hero);
     entities.insert(entities.end(), hero);
     /* generate dungeon and place character */
 
@@ -228,9 +225,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
         hero->update_points();
         for (bullet* b : bullets) {
             if (b->position.x + TILE_SIZE < 0 ||
-                b->position.x > WINDOW_WIDTH / 4 + TILE_SIZE ||
+                b->position.x > WINDOW_WIDTH / 2 + TILE_SIZE ||
                 b->position.y + TILE_SIZE < 0 ||
-                b->position.y > WINDOW_HEIGHT / 4 + TILE_SIZE) {
+                b->position.y > WINDOW_HEIGHT / 2 + TILE_SIZE) {
                 delete *(bullets.begin() + i);
                 bullets.erase(bullets.begin() + i);
                 continue;
