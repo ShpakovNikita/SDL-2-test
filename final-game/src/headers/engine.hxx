@@ -137,10 +137,16 @@ class camera {
 class instance {
    public:
     instance(std::vector<float>, float x, float y, float z, int size);
+    instance(std::vector<float>,
+             float x,
+             float y,
+             float z,
+             int size_x,
+             int size_y);
     virtual ~instance();
 
     vertex_2d position;
-    vertex_2d size;
+    point size;
 
     float weight = 1.0f;
 

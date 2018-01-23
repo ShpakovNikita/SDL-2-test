@@ -22,7 +22,7 @@ player::player(std::vector<float> data,
                int size)
     : life_form(data, x, y, z_index, speed, size) {
     // TODO Auto-generated constructor stub
-    health = 5;
+    health = 10;
     shooting_point = CHL::point(15, -8);
     selected_frame = 0;
 

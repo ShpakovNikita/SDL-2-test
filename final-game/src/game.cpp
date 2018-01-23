@@ -121,7 +121,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     int map_grid_pf[x_size * y_size];
     int count = 0;
-    int dest = 0;
+    int dest = 20;
     while (count < dest) {
         int x = rand() % x_size;
         int y = rand() % y_size;
@@ -157,7 +157,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     /* animation test */
     instance* animated_block =
         new instance(data, 5 * TILE_SIZE - 4, 5 * TILE_SIZE + TILE_SIZE - 4,
-                     MIN_DEPTH, TILE_SIZE + 8);
+                     MIN_DEPTH, TILE_SIZE + 8, TILE_SIZE + 16);
     animated_block->frames_in_animation = 11;
     animated_block->frames_in_texture = 11;
     animated_block->loop_animation(0.06f);
