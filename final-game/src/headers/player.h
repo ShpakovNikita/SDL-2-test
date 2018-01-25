@@ -12,12 +12,7 @@
 
 class player : public CHL::life_form {
    public:
-    player(std::vector<float> data,
-           float x,
-           float y,
-           float z_index,
-           int speed,
-           int size);
+    player(float x, float y, float z_index, int speed, int size);
     virtual ~player();
 
     float shooting_alpha = 0;

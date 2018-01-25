@@ -22,6 +22,9 @@
 #include "headers/collision_solves.hxx"
 #include "headers/player.h"
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include "headers/game_constants.h"
 
 enum class mode { draw, look, idle };
@@ -37,6 +40,20 @@ int main(int /*argc*/, char* /*argv*/ []) {
     eng->GL_clear_color();
     eng->GL_swap_buffers();
 
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft))
+        std::cerr << "ERROR::FREETYPE: Could not init FreeType Library"
+                  << std::endl;
+
+    FT_Face face;
+    if (FT_New_Face(ft, "fonts/INVASION2000.ttf", 0, &face))
+        std::cerr << "ERROR::FREETYPE: Failed to load font" << std::endl;
+
+    FT_Set_Pixel_Sizes(face, 0, 48);
+
+    if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
+        std::cerr << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+
     /* loading textures */
 
     manager.add_texture("brick", new texture("test.png"));
@@ -47,21 +64,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
     manager.add_texture("explosion", new texture("explosion.png"));
     manager.add_texture("obelisk", new texture("obelisk.png"));
 
-    std::ifstream fin(VERTEX_FILE);
-    assert(!!fin);
-
-    triangle t_arr[2];
-    fin >> t_arr[0] >> t_arr[1];
-    std::vector<float> data;
-    for (auto t : t_arr)
-        convert_triangle(t, data);
-
     DungeonGenerator generator(x_size, y_size);
     auto map = generator.Generate();
     std::vector<int> tile_set = map.Print();
 
     bool placed = false;
-    player* hero = new player(data, 0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE);
+    player* hero = new player(0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE);
     hero->weight = 2;
 
     camera* main_camera = new camera(WINDOW_WIDTH / 8, WINDOW_HEIGHT / 8,
@@ -86,8 +94,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
             if (*(tile_set.begin() + y * x_size + x) != 0) {
                 bricks.insert(
                     bricks.end(),
-                    create_wall(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE,
-                                1.0f, TILE_SIZE));
+                    create_wall(x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE, 1.0f,
+                                TILE_SIZE));
                 (*(bricks.end() - 1))->frames_in_texture = 13;
                 (*(bricks.end() - 1))->tilesets_in_texture = 3;
                 (*(bricks.end() - 1))->selected_frame = default_frame;
@@ -108,9 +116,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
     std::vector<instance*> floor;
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
-            floor.insert(floor.end(), create_wall(data, x * TILE_SIZE,
-                                                  y * TILE_SIZE + TILE_SIZE,
-                                                  MAX_DEPTH, TILE_SIZE));
+            floor.insert(floor.end(),
+                         create_wall(x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE,
+                                     MAX_DEPTH, TILE_SIZE));
             (*(floor.end() - 1))->frames_in_texture = 4;
             (*(floor.end() - 1))->selected_frame = rand() % 4;
         }
@@ -126,10 +134,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
         int x = rand() % x_size;
         int y = rand() % y_size;
         if (*(tile_set.begin() + y * x_size + x) != 1) {
-            entities.insert(
-                entities.end(),
-                new enemy(data, x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE, 0.0f,
-                          P_SPEED - 17, TILE_SIZE));
+            entities.insert(entities.end(),
+                            new enemy(x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE,
+                                      0.0f, P_SPEED - 17, TILE_SIZE));
             (*(entities.end() - 1))->frames_in_texture = 4;
             (*(entities.end() - 1))->collision_box.y = TILE_SIZE / 2;
             dynamic_cast<enemy*>(*(entities.end() - 1))->map = map_grid_pf;
@@ -156,7 +163,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     /* animation test */
     instance* animated_block =
-        new instance(data, 5 * TILE_SIZE - 4, 5 * TILE_SIZE + TILE_SIZE - 4,
+        new instance(5 * TILE_SIZE - 4, 5 * TILE_SIZE + TILE_SIZE - 4,
                      MIN_DEPTH, TILE_SIZE + 8, TILE_SIZE + 16);
     animated_block->frames_in_animation = 11;
     animated_block->frames_in_texture = 11;
@@ -249,12 +256,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
                             entities.erase(entities.begin() + j);
                         }
 
-                        se.insert(
-                            se.end(),
-                            new special_effect(
-                                data, intersection_point->x - TILE_SIZE / 4 - 1,
-                                intersection_point->y + TILE_SIZE / 4 + 1,
-                                MIN_DEPTH, TILE_SIZE / 2 + 2));
+                        se.insert(se.end(),
+                                  new special_effect(
+                                      intersection_point->x - TILE_SIZE / 4 - 1,
+                                      intersection_point->y + TILE_SIZE / 4 + 1,
+                                      MIN_DEPTH, TILE_SIZE / 2 + 2));
                         (*(se.end() - 1))->frames_in_texture = 8;
                         j = entities.size();
                         smth_destroyed = true;
@@ -263,12 +269,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
                         delete *(bullets.begin() + i);
                         bullets.erase(bullets.begin() + i);
 
-                        se.insert(
-                            se.end(),
-                            new special_effect(
-                                data, intersection_point->x - TILE_SIZE / 4 - 1,
-                                intersection_point->y + TILE_SIZE / 4 + 1,
-                                MIN_DEPTH, TILE_SIZE / 2 + 2));
+                        se.insert(se.end(),
+                                  new special_effect(
+                                      intersection_point->x - TILE_SIZE / 4 - 1,
+                                      intersection_point->y + TILE_SIZE / 4 + 1,
+                                      MIN_DEPTH, TILE_SIZE / 2 + 2));
                         (*(se.end() - 1))->frames_in_texture = 8;
                         if (--entities[j]->health <= 0) {
                             quit = true;
@@ -287,12 +292,11 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     delete *(bullets.begin() + i);
                     bullets.erase(bullets.begin() + i);
 
-                    se.insert(
-                        se.end(),
-                        new special_effect(
-                            data, intersection_point->x - TILE_SIZE / 4 - 1,
-                            intersection_point->y + TILE_SIZE / 4 + 1,
-                            MIN_DEPTH, TILE_SIZE / 2 + 2));
+                    se.insert(se.end(),
+                              new special_effect(
+                                  intersection_point->x - TILE_SIZE / 4 - 1,
+                                  intersection_point->y + TILE_SIZE / 4 + 1,
+                                  MIN_DEPTH, TILE_SIZE / 2 + 2));
                     (*(se.end() - 1))->frames_in_texture = 8;
 
                     i--;

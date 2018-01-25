@@ -21,8 +21,8 @@ void stall(enemy* e);
 void chase(enemy* e);
 void smart_move(enemy* e);
 
-enemy::enemy(std::vector<float> d, float x, float y, float z, int _speed, int s)
-    : life_form(d, x, y, z, _speed, s) {
+enemy::enemy(float x, float y, float z, int _speed, int s)
+    : life_form(x, y, z, _speed, s) {
     // TODO Auto-generated constructor stub
     health = 3;
     state = smart_move;
@@ -158,10 +158,9 @@ void enemy::move(float dt) {
 void enemy::fire() {
     if (shoot_delay <= 0.0f) {
         shoot_delay = 1;
-        bullets.insert(
-            bullets.end(),
-            new bullet(data, position.x + shooting_point.x,
-                       position.y + shooting_point.y, 0.0f, 4, 0, 2));
+        bullets.insert(bullets.end(), new bullet(position.x + shooting_point.x,
+                                                 position.y + shooting_point.y,
+                                                 0.0f, 4, 0, 2));
         (*(bullets.end() - 1))->alpha =
             calculate_alpha_precision(shooting_alpha);
         (*(bullets.end() - 1))->speed = B_SPEED;

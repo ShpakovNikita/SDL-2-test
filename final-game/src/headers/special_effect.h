@@ -12,7 +12,7 @@
 
 class special_effect : public CHL::instance {
    public:
-    special_effect(std::vector<float>, float x, float y, float z, int size);
+    special_effect(float x, float y, float z, int size);
     virtual ~special_effect();
 
     void update_frame();

@@ -10,14 +10,8 @@
 
 #include <math.h>
 
-bullet::bullet(std::vector<float> data,
-               float x,
-               float y,
-               float z,
-               int _size,
-               int _damage,
-               float _alpha)
-    : instance(data, x, y, z, _size) {
+bullet::bullet(float x, float y, float z, int _size, int _damage, float _alpha)
+    : instance(x, y, z, _size) {
     damage = _damage;
     alpha = _alpha;
     speed = 1;

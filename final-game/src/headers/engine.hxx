@@ -17,6 +17,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <map>
 
 namespace CHL    // chlorine-5
 {
@@ -60,29 +61,25 @@ struct vertex_2d {
     float x_t, y_t;
 };
 
-struct triangle {
-    triangle() {
-        vertices.insert(vertices.end(), vertex_2d());
-        vertices.insert(vertices.end(), vertex_2d());
-        vertices.insert(vertices.end(), vertex_2d());
-    }
-
-    triangle(vertex_2d v1, vertex_2d v2, vertex_2d v3) {
-        vertices.insert(vertices.end(), v1);
-        vertices.insert(vertices.end(), v2);
-        vertices.insert(vertices.end(), v3);
-    }
-
-    std::vector<vertex_2d> vertices;
+struct vec3 {
+    vec3(int _x, int _y, int _z) : x(_x), y(_y), z(_z) {}
+    vec3() : x(0.0f), y(0.0f), z(0.0f) {}
+    float x, y, z;
 };
 
-void convert_triangle(const triangle&, std::vector<float>&);
+struct character {
+    unsigned int texture_id;
+    point size;
+    point bearing;
+    unsigned int advance;
+};
 
-std::istream& operator>>(std::istream& in, vertex_2d& v);
-std::istream& operator>>(std::istream& in, triangle& t);
-triangle operator+(triangle& tl, triangle& tr);
-
-triangle blend(const triangle&, const triangle&, const float);
+class font {
+   public:
+    font(std::string path);
+    virtual ~font();
+    std::map<char, character> characters;
+};
 
 class instance;
 class engine;
@@ -134,15 +131,23 @@ class camera {
     point center;
 };
 
+class quad {
+   public:
+    quad(float x, float y, float z, int size);
+    quad(float x, float y, float z, int size_x, int size_y);
+    virtual ~quad();
+
+    vertex_2d position;
+    point size;
+    float alpha = 0;
+
+    std::vector<float> get_vector();
+};
+
 class instance {
    public:
-    instance(std::vector<float>, float x, float y, float z, int size);
-    instance(std::vector<float>,
-             float x,
-             float y,
-             float z,
-             int size_x,
-             int size_y);
+    instance(float x, float y, float z, int size);
+    instance(float x, float y, float z, int size_x, int size_y);
     virtual ~instance();
 
     vertex_2d position;
@@ -179,7 +184,6 @@ class instance {
     bool animation_loop = false;       //!
     int delay;                         //!
     float delta_frame;
-    std::vector<float> data;
 
    private:
     int prev_tileset;
@@ -187,7 +191,7 @@ class instance {
 
 class life_form : public instance {
    public:
-    life_form(std::vector<float>, float x, float y, float z, int _speed, int s);
+    life_form(float x, float y, float z, int _speed, int s);
     virtual ~life_form();
     virtual void move(float) = 0;
     int speed;
@@ -195,11 +199,7 @@ class life_form : public instance {
     float delta_x = 0, delta_y = 0;
 };
 
-instance* create_wall(std::vector<float> data,
-                      float x,
-                      float y,
-                      float z,
-                      int size);
+instance* create_wall(float x, float y, float z, int size);
 
 class sound {
    public:

@@ -21,7 +21,7 @@ class enemy;
 
 class enemy : public CHL::life_form {
    public:
-    enemy(std::vector<float> d, float x, float y, float z, int _speed, int s);
+    enemy(float x, float y, float z, int _speed, int s);
     virtual ~enemy();
 
     CHL::point destination;

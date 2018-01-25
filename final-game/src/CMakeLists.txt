@@ -7,12 +7,12 @@ texture.cxx headers/bullet.h headers/engine.hxx enemy.cpp headers/enemy.h
 headers/picopng.hxx dungeon.cpp special_effect.cpp headers/special_effect.h
 headers/pathfinders.h pathfinders.cpp headers/collision_solves.hxx 
 headers/game_constants.h player.cpp headers/player.h headers/game_functions.hxx
-resource_manager.cpp headers/resource_manager.h)
+resource_manager.cpp headers/resource_manager.h font.cxx)
 
 if(UNIX)
-    set(PROJECT_LINK_LIB -lglew32 -lSDL2main -lSDL2)
+    set(PROJECT_LINK_LIB -lglew32 -lSDL2main -lSDL2 -lfreetype)
 else()
-    set(PROJECT_LINK_LIB -lmingw32 -lglew32 -lSDL2main -lSDL2 -mwindows -lopengl32)
+    set(PROJECT_LINK_LIB -lmingw32 -lglew32 -lSDL2main -lSDL2 -mwindows -lopengl32 -lfreetype)
 endif(UNIX)
 
 

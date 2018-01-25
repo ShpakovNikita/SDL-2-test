@@ -7,12 +7,8 @@
 
 #include "headers/special_effect.h"
 
-special_effect::special_effect(std::vector<float> d,
-                               float x,
-                               float y,
-                               float z,
-                               int size)
-    : instance(d, x, y, z, size) {
+special_effect::special_effect(float x, float y, float z, int size)
+    : instance(x, y, z, size) {
     // TODO Auto-generated constructor stub
     delay = 60 / fps;
 }
