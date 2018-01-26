@@ -22,9 +22,6 @@
 #include "headers/collision_solves.hxx"
 #include "headers/player.h"
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
-
 #include "headers/game_constants.h"
 
 enum class mode { draw, look, idle };
@@ -40,19 +37,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     eng->GL_clear_color();
     eng->GL_swap_buffers();
 
-    FT_Library ft;
-    if (FT_Init_FreeType(&ft))
-        std::cerr << "ERROR::FREETYPE: Could not init FreeType Library"
-                  << std::endl;
-
-    FT_Face face;
-    if (FT_New_Face(ft, "fonts/INVASION2000.ttf", 0, &face))
-        std::cerr << "ERROR::FREETYPE: Failed to load font" << std::endl;
-
-    FT_Set_Pixel_Sizes(face, 0, 48);
-
-    if (FT_Load_Char(face, 'X', FT_LOAD_RENDER))
-        std::cerr << "ERROR::FREETYTPE: Failed to load Glyph" << std::endl;
+    font f("fonts/INVASION2000.ttf");
 
     /* loading textures */
 
@@ -129,7 +114,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     int map_grid_pf[x_size * y_size];
     int count = 0;
-    int dest = 20;
+    int dest = 0;
     while (count < dest) {
         int x = rand() % x_size;
         int y = rand() % y_size;
@@ -174,6 +159,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
         float delta_time = eng->GL_time() - prev_frame;
         prev_frame = eng->GL_time();
         event e;
+
+        std::cout << "------------------" << std::endl;
+        std::cout << 1000.0f / FPS << std::endl;
 
         while (eng->read_input(e)) {
             //            std::cout << e << std::endl;
@@ -314,57 +302,65 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         /* draw sprites */
+        float t = (eng->GL_time() - prev_frame) * 1000;
         eng->GL_clear_color();
+        if (t > 1000 / FPS)
+            std::cerr << "freeze" << std::endl;
 
+        std::cout << (eng->GL_time() - prev_frame) * 1000 << std::endl;
         for (auto tile : floor)
-            eng->add_object(tile);
+            eng->add_object(tile, main_camera);
 
+        std::cout << (eng->GL_time() - prev_frame) * 1000 << std::endl;
         if (!floor.empty())
             eng->draw(manager.get_texture("floor"), main_camera);
 
         for (auto brick : bricks)
-            eng->add_object(brick);
+            eng->add_object(brick, main_camera);
 
         if (!bricks.empty())
             eng->draw(manager.get_texture("brick"), main_camera);
 
         for (auto bullet : bullets) {
             bullet->move(delta_time);
-            eng->add_object(bullet);
+            eng->add_object(bullet, main_camera);
         }
 
         if (!bullets.empty())
             eng->draw(manager.get_texture("bullet"), main_camera);
 
-        eng->add_object(hero);
+        eng->add_object(hero, main_camera);
         eng->draw(manager.get_texture("hero"), main_camera);
 
         for (auto e : entities) {
             if (dynamic_cast<enemy*>(e) != nullptr)
-                eng->add_object(e);
+                eng->add_object(e, main_camera);
         }
         if (!entities.empty())
             eng->draw(manager.get_texture("tank"), main_camera);
 
         for (auto effect : se) {
             effect->update_frame();
-            eng->add_object(effect);
+            eng->add_object(effect, main_camera);
         }
 
         if (!se.empty())
             eng->draw(manager.get_texture("explosion"), main_camera);
 
         animated_block->update();
-        eng->add_object(animated_block);
+        eng->add_object(animated_block, main_camera);
         eng->draw(manager.get_texture("obelisk"), main_camera);
 
         eng->GL_swap_buffers();
+        std::cout << (eng->GL_time() - prev_frame) * 1000 << std::endl;
 
         /* dynamic sleep */
-        float time = (eng->GL_time() - prev_frame) * 1000;
-        if (time < 1000 / FPS)
+        t = (eng->GL_time() - prev_frame) * 1000;
+        if (t > 1000 / FPS)
+            std::cerr << "freeze" << std::endl;
+        if (t < 1000 / FPS)
             std::this_thread::sleep_for(
-                std::chrono::milliseconds(1000 / FPS - (int)time));
+                std::chrono::milliseconds(1000 / FPS - (int)t));
     }
 
     eng->CHL_exit();

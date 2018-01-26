@@ -131,19 +131,6 @@ class camera {
     point center;
 };
 
-class quad {
-   public:
-    quad(float x, float y, float z, int size);
-    quad(float x, float y, float z, int size_x, int size_y);
-    virtual ~quad();
-
-    vertex_2d position;
-    point size;
-    float alpha = 0;
-
-    std::vector<float> get_vector();
-};
-
 class instance {
    public:
     instance(float x, float y, float z, int size);
@@ -230,8 +217,13 @@ class engine {
     virtual bool read_input(event&) = 0;
     virtual void CHL_exit() = 0;
     virtual point get_mouse_pos(camera*) = 0;
-    virtual void add_object(instance*) = 0;
+    virtual void add_object(instance*, camera*) = 0;
     virtual void draw(texture*, camera*) = 0;
+    virtual void render_text(const std::string& text,
+                             const font& f,
+                             float x,
+                             float y,
+                             vec3 color) = 0;
     virtual void set_virtual_pixel(int, int) = 0;
     //    virtual bool load_texture(std::string) = 0;
     virtual event_type get_event_type() = 0;
