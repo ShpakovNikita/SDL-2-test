@@ -32,12 +32,12 @@ int main(int /*argc*/, char* /*argv*/ []) {
                                                    destroy_engine);
 
     eng->CHL_init(WINDOW_WIDTH, WINDOW_HEIGHT, TILE_SIZE, FPS);
-    eng->set_virtual_pixel(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
+    eng->set_virtual_pixel(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
     eng->GL_clear_color();
     eng->GL_swap_buffers();
 
-    font f("fonts/INVASION2000.ttf");
+    font* f = new font("fonts/INVASION2000.ttf");
 
     /* loading textures */
 
@@ -114,7 +114,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     int map_grid_pf[x_size * y_size];
     int count = 0;
-    int dest = 0;
+    int dest = 3;
     while (count < dest) {
         int x = rand() % x_size;
         int y = rand() % y_size;
@@ -136,7 +136,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     manager.add_sound("start_music", new sound(SND_FOLDER + START_MUSIC));
     manager.add_sound("move_sound", new sound(SND_FOLDER + MOVE_SOUND));
     manager.add_sound("shot_sound", new sound(SND_FOLDER + "shot.wav"));
-    manager.get_sound("start_music")->play();
+    //    manager.get_sound("start_music")->play();
 
     point shooting_point = point(14, -9);
     float prev_frame = eng->GL_time();
@@ -159,9 +159,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
         float delta_time = eng->GL_time() - prev_frame;
         prev_frame = eng->GL_time();
         event e;
-
-        std::cout << "------------------" << std::endl;
-        std::cout << 1000.0f / FPS << std::endl;
 
         while (eng->read_input(e)) {
             //            std::cout << e << std::endl;
@@ -302,16 +299,13 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         /* draw sprites */
-        float t = (eng->GL_time() - prev_frame) * 1000;
         eng->GL_clear_color();
-        if (t > 1000 / FPS)
-            std::cerr << "freeze" << std::endl;
+        eng->render_text("KUNG FURY!!!!1!", f, 400, 100, MIN_DEPTH,
+                         vec3(1.0f, 0.0f, 0.0f));
 
-        std::cout << (eng->GL_time() - prev_frame) * 1000 << std::endl;
         for (auto tile : floor)
             eng->add_object(tile, main_camera);
 
-        std::cout << (eng->GL_time() - prev_frame) * 1000 << std::endl;
         if (!floor.empty())
             eng->draw(manager.get_texture("floor"), main_camera);
 
@@ -352,10 +346,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
         eng->draw(manager.get_texture("obelisk"), main_camera);
 
         eng->GL_swap_buffers();
-        std::cout << (eng->GL_time() - prev_frame) * 1000 << std::endl;
 
         /* dynamic sleep */
-        t = (eng->GL_time() - prev_frame) * 1000;
+        float t = (eng->GL_time() - prev_frame) * 1000;
         if (t > 1000 / FPS)
             std::cerr << "freeze" << std::endl;
         if (t < 1000 / FPS)

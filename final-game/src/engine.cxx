@@ -94,7 +94,37 @@ static std::string fragment_glsl =
 
     "uniform sampler2D our_texture;"
 
-    "void main(){color = texture(our_texture, tex_coord);}";
+    "void main()"
+    "{"
+    "color = texture(our_texture, tex_coord) * vertex_color;"
+    "}";
+
+static std::string test_fragment_glsl =
+    "out vec4 color;"
+
+    "in vec4 vertex_color;"
+    "in vec2 tex_coord;"
+
+    "uniform sampler2D our_texture;"
+
+    "void main()"
+    "{"
+    "color = texture(our_texture, tex_coord) * vec4(0.0, 0.5f, 0.5f, 1.0f);"
+    "}";
+
+static std::string text_fragment_glsl =
+    "out vec4 color;"
+
+    "in vec4 vertex_color;"
+    "in vec2 tex_coord;"
+
+    "uniform sampler2D our_texture;"
+
+    "void main()"
+    "{"
+    "vec4 sampled = vec4(1.0, 1.0, 1.0, texture(our_texture, tex_coord).r);"
+    "color = sampled * vertex_color;"
+    "}";
 
 static std::string vertex_glsl =
     "layout (location = 0) in vec3 position;"
@@ -105,10 +135,29 @@ static std::string vertex_glsl =
 
     "uniform vec3 our_color;"
     "uniform mat4 transform;"
+    "uniform mat4 projection;"
 
     "void main()"
     "{"
-    "gl_Position = transform * vec4(position, 1.0);"
+    "gl_Position = projection * transform * vec4(position, 1.0);"
+    "vertex_color = vec4(our_color, 1.0f);"
+    "tex_coord = vec2(texCoord.x, 1.0 - texCoord.y);"
+    "}";
+
+static std::string text_vertex_glsl =
+    "layout (location = 0) in vec3 position;"
+    "layout (location = 1) in vec2 texCoord;"
+
+    "out vec4 vertex_color;"
+    "out vec2 tex_coord;"
+
+    "uniform vec3 our_color;"
+    "uniform mat4 transform;"
+    "uniform mat4 projection;"
+
+    "void main()"
+    "{"
+    "gl_Position = projection * transform * vec4(position, 1.0);"
     "vertex_color = vec4(our_color, 1.0f);"
     "tex_coord = vec2(texCoord.x, 1.0 - texCoord.y);"
     "}";
@@ -371,6 +420,7 @@ class engine_impl final : public engine {
     event_type e_type = event_type::other;
     SDL_Window* window = nullptr;
     GLuint shader_program;
+    GLuint text_shader_program;
 
     std::vector<float> vertex_buffer;
 
@@ -406,27 +456,27 @@ class engine_impl final : public engine {
     }
 
     GLuint create_shader_program(GLuint vertex_shader, GLuint fragment_shader) {
-        GLuint shader_program = glCreateProgram();
+        GLuint shader = glCreateProgram();
 
-        glAttachShader(shader_program, vertex_shader);
-        glAttachShader(shader_program, fragment_shader);
+        glAttachShader(shader, vertex_shader);
+        glAttachShader(shader, fragment_shader);
 
-        glLinkProgram(shader_program);
+        glLinkProgram(shader);
 
         GLchar infoLog[512];
         GLint success;
 
-        glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
+        glGetProgramiv(shader, GL_LINK_STATUS, &success);
 
         if (!success) {
-            glGetProgramInfoLog(shader_program, 512, nullptr, infoLog);
+            glGetProgramInfoLog(shader, 512, nullptr, infoLog);
             std::cerr << "Shader compilation failed:\n" << infoLog << std::endl;
         }
 
         glDeleteShader(vertex_shader);
         glDeleteShader(fragment_shader);
 
-        return shader_program;
+        return shader;
     }
 
    public:
@@ -454,19 +504,18 @@ class engine_impl final : public engine {
         }
 
         // Get device display mode
-        //        SDL_DisplayMode displayMode;
-        //        if (SDL_GetCurrentDisplayMode(0, &displayMode)) {
-        //            const char* err_message = SDL_GetError();
-        //            std::cerr << "error: failed call SDL_Init: " <<
-        //            err_message
-        //                      << std::endl;
-        //            return EXIT_FAILURE;
-        //        }
-        //
-        //        w_h = displayMode.h;
-        //        w_w = displayMode.w;
-        //
-        //        std::cout << w_w << " " << w_h << std::endl;
+        SDL_DisplayMode displayMode;
+        if (SDL_GetCurrentDisplayMode(0, &displayMode)) {
+            const char* err_message = SDL_GetError();
+            std::cerr << "error: failed call SDL_Init: " << err_message
+                      << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        w_h = displayMode.h;
+        w_w = displayMode.w;
+
+        std::cout << w_w << " " << w_h << std::endl;
 
         window = SDL_CreateWindow("Chlorine-5", SDL_WINDOWPOS_CENTERED,
                                   SDL_WINDOWPOS_CENTERED, width, height,
@@ -517,6 +566,15 @@ class engine_impl final : public engine {
 
         shader_program = create_shader_program(vertex_shader, fragment_shader);
 
+        GLuint text_vertex_shader =
+            compile_shader(text_vertex_glsl.c_str(), GL_VERTEX_SHADER);
+
+        GLuint text_fragment_shader =
+            compile_shader(text_fragment_glsl.c_str(), GL_FRAGMENT_SHADER);
+
+        text_shader_program =
+            create_shader_program(text_vertex_shader, text_fragment_shader);
+
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -529,7 +587,6 @@ class engine_impl final : public engine {
         glEnable(GL_SCISSOR_TEST);
         glScissor(0, 0, w_w, w_h);
 
-        glGenVertexArrays(1, &vao);
         glGenBuffers(1, &vbo);
 
         t_size = size;
@@ -577,8 +634,6 @@ class engine_impl final : public engine {
         text->bind();
         glUniform1i(glGetUniformLocation(shader_program, "our_texture"), 0);
 
-        glBindVertexArray(vao);
-
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER,
                      vertex_buffer.size() * sizeof(vertex_buffer[0]),
@@ -616,62 +671,109 @@ class engine_impl final : public engine {
                           1.0f * cam->get_center().y / t_size, 0.0f));
         }
 
+        GLint color_pos = glGetUniformLocation(shader_program, "our_color");
+        //                float green = glm::cos(GL_time()) * 2;
+        //                float blue = glm::sin(GL_time());
+
+        glUniform3f(color_pos, 1.0f, 1.0f, 1.0f);
+
         GLint transformLoc = glGetUniformLocation(shader_program, "transform");
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE,
                            glm::value_ptr(transform));
 
+        glm::mat4 projection;
+        GLint projectionLoc =
+            glGetUniformLocation(shader_program, "projection");
+        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE,
+                           glm::value_ptr(projection));
+
         GL_CHECK();
         glDrawArrays(GL_TRIANGLES, 0, vertex_buffer.size() / STRIDE_ELEMENTS);
-        GL_unbind();
         vertex_buffer.clear();
-        //        tex->unbind();
+        glUseProgram(0);
+        text->unbind();
     }
 
     virtual void render_text(const std::string& text,
-                             const font& f,
+                             font* f,
                              float x,
                              float y,
+                             int z_pos,
                              vec3 color) final {
-        //        s.Use();
-        //        glUniform3f(glGetUniformLocation(s.Program, "textColor"),
-        //        color.x, color.y, color.z); glActiveTexture(GL_TEXTURE0);
-        //        glBindVertexArray(VAO);
-        //
-        //        // Iterate through all characters
-        //        std::string::const_iterator c;
-        //        for (c = text.begin(); c != text.end(); c++)
-        //        {
-        //            Character ch = Characters[*c];
-        //
-        //            GLfloat xpos = x + ch.Bearing.x * scale;
-        //            GLfloat ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
-        //
-        //            GLfloat w = ch.Size.x * scale;
-        //            GLfloat h = ch.Size.y * scale;
-        //            // Update VBO for each character
-        //            GLfloat vertices[6][4] = {
-        //                { xpos,     ypos + h,   0.0, 0.0 },
-        //                { xpos,     ypos,       0.0, 1.0 },
-        //                { xpos + w, ypos,       1.0, 1.0 },
-        //
-        //                { xpos,     ypos + h,   0.0, 0.0 },
-        //                { xpos + w, ypos,       1.0, 1.0 },
-        //                { xpos + w, ypos + h,   1.0, 0.0 }
-        //            };
-        //            // Render glyph texture over quad
-        //            glBindTexture(GL_TEXTURE_2D, ch.textureID);
-        //            // Update content of VBO memory
-        //            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        //            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices),
-        //            vertices); glBindBuffer(GL_ARRAY_BUFFER, 0);
-        //            // Render quad
-        //            glDrawArrays(GL_TRIANGLES, 0, 6);
-        //            // Now advance cursors for next glyph (note that advance
-        //            is number of 1/64 pixels) x += (ch.Advance >> 6) * scale;
-        //            // Bitshift by 6 to get value in pixels (2^6 = 64)
-        //        }
-        //        glBindVertexArray(0);
-        //        glBindTexture(GL_TEXTURE_2D, 0);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 5, nullptr,
+                     GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat), 0);
+        glEnableVertexAttribArray(0);
+
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(GLfloat),
+                              (GLvoid*)(3 * sizeof(GLfloat)));
+        glEnableVertexAttribArray(1);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        glUseProgram(text_shader_program);
+
+        glUniform3f(glGetUniformLocation(text_shader_program, "our_color"),
+                    color.x, color.y, color.z);
+        glActiveTexture(GL_TEXTURE0);
+
+        //        glm::mat4 projection = glm::ortho((float)w_w, 0.0f,
+        //        (float)w_h, 0.0f); GLint projectionLoc =
+        //            glGetUniformLocation(shader_program, "projection");
+        //        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE,
+        //                           glm::value_ptr(projection));
+
+        glm::mat4 transform;
+        transform = glm::translate(
+            transform, glm::vec3(-1.0f, 1.0f - (48.0f * 2 / w_h), 0.0f));
+        transform = glm::scale(
+            transform, glm::vec3(2.0f / (float)w_w, 2.0f / (float)w_h, 1.0f));
+        GLint transformLoc =
+            glGetUniformLocation(text_shader_program, "transform");
+        glUniformMatrix4fv(transformLoc, 1, GL_FALSE,
+                           glm::value_ptr(transform));
+
+        // Iterate through all characters
+
+        float z = glm::clamp(z_pos, MAX_DEPTH, MIN_DEPTH) / 2.0f / MAX_DEPTH;
+
+        std::string::const_iterator c;
+        for (c = text.begin(); c != text.end(); c++) {
+            character ch = f->characters[*c];
+
+            GLfloat xpos = x + ch.bearing.x;
+            GLfloat ypos = -y - (ch.size.y - ch.bearing.y);
+
+            GLfloat w = ch.size.x;
+            GLfloat h = ch.size.y;
+            // Render glyph texture over quad
+            glBindTexture(GL_TEXTURE_2D, ch.texture_id);
+            glUniform1i(
+                glGetUniformLocation(text_shader_program, "our_texture"), 0);
+            // Update content of VBO memory
+            glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+            GLfloat vertices[6][5] = {
+                {xpos, ypos + h, z, 0.0, 1.0},    {xpos, ypos, z, 0.0, 0.0},
+                {xpos + w, ypos, z, 1.0, 0.0},
+
+                {xpos, ypos + h, z, 0.0, 1.0},    {xpos + w, ypos, z, 1.0, 0.0},
+                {xpos + w, ypos + h, z, 1.0, 1.0}};
+
+            glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            // Render quad
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            x += (ch.advance >> 6);
+            // Now advance cursors for next glyph (note that advance
+            // is number of 1/64 pixels)
+            // Bitshift by 6 to get value in pixels (2^6 = 64)
+        }
+
+        glUseProgram(0);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
     }
 
     void CHL_exit() final {

@@ -220,9 +220,10 @@ class engine {
     virtual void add_object(instance*, camera*) = 0;
     virtual void draw(texture*, camera*) = 0;
     virtual void render_text(const std::string& text,
-                             const font& f,
+                             font* f,
                              float x,
                              float y,
+                             int z_pos,
                              vec3 color) = 0;
     virtual void set_virtual_pixel(int, int) = 0;
     //    virtual bool load_texture(std::string) = 0;
