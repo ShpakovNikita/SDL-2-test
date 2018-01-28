@@ -109,6 +109,8 @@ class texture {
     void bind();
     void unbind();
 
+    float alpha = 1.0f;
+
    private:
     int w;
     int h;
@@ -152,6 +154,8 @@ class instance {
     int frames_in_animation = 1;    //!
 
     std::array<point, 4> mesh_points;
+    std::string tag = "none";
+    float alpha_channel = 1.0f;
 
     void get_points();
 
@@ -203,6 +207,17 @@ class sound {
     uint32_t buffer_size;
 };
 
+class user_interface {
+   public:
+    user_interface(camera*);
+    virtual ~user_interface();
+    void add_instance();
+
+   private:
+    camera* focus_camera;
+    std::vector<instance*> user_interface_elements;
+};
+
 class engine {
    public:
     engine();
@@ -218,11 +233,12 @@ class engine {
     virtual void CHL_exit() = 0;
     virtual point get_mouse_pos(camera*) = 0;
     virtual void add_object(instance*, camera*) = 0;
-    virtual void draw(texture*, camera*) = 0;
+    virtual void draw(texture*, camera*, instance*) = 0;
     virtual void render_text(const std::string& text,
                              font* f,
                              float x,
                              float y,
+                             float offset,
                              int z_pos,
                              vec3 color) = 0;
     virtual void set_virtual_pixel(int, int) = 0;

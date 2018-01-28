@@ -60,6 +60,14 @@ float change_sprite(player* p) {
     return a;
 }
 
+void player::blink() {
+    if (blink_delay <= 0) {
+        blinking = true;
+        blink_delay = 1.0f;
+        blinking_path = 32;
+    }
+}
+
 void player::fire() {
     if (shoot_delay <= 0.0f) {
         manager.get_sound("shot_sound")->play();
@@ -101,6 +109,34 @@ void player::move(float dt) {
 
     delta_x = 0;
     delta_y = 0;
+
+    if (blinking) {
+        path *= 3;
+        blinking_path -= path;
+        delta_x = path * std::cos(a);
+        delta_y = -path * std::sin(a);
+
+        position.y += delta_y;
+        position.x += delta_x;
+
+        if (blinking_path <= 0) {
+            blinking = false;
+            return;
+        }
+        non_material_quads.insert(
+            non_material_quads.end(),
+            new CHL::instance(position.x, position.y, position.z_index,
+                              TILE_SIZE));
+
+        (*(non_material_quads.end() - 1))->frames_in_texture =
+            frames_in_texture;
+        (*(non_material_quads.end() - 1))->tilesets_in_texture =
+            tilesets_in_texture;
+        (*(non_material_quads.end() - 1))->selected_tileset = selected_tileset;
+        (*(non_material_quads.end() - 1))->selected_frame = selected_frame;
+
+        return;
+    }
 
     if (keys[static_cast<int>(CHL::event::up_pressed)]) {
         selected_tileset = 4;
@@ -151,6 +187,8 @@ void player::move(float dt) {
         shoot_delay -= dt;
     if (super_delay > 0)
         super_delay -= dt;
+    if (blink_delay > 0)
+        blink_delay -= dt;
 
     update_points();
     update();

@@ -172,7 +172,9 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 case event::button1_pressed:
                     hero->super_fire();
                     break;
-
+                case event::button2_pressed:
+                    hero->blink();
+                    break;
                 case event::left_mouse_pressed:
                     hero->fire();
                     break;
@@ -300,20 +302,31 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
         /* draw sprites */
         eng->GL_clear_color();
-        eng->render_text("KUNG FURY!!!!1!", f, 400, 100, MIN_DEPTH,
-                         vec3(1.0f, 0.0f, 0.0f));
+        //        eng->render_text(
+        //            "KUNG FURY!!!!!!!!!! Class aptent taciti sociosqu ad
+        //            litora " "torquent per conubia nostra, per inceptos
+        //            himenaeos. Donec orci" "risus, dignissim vitae dolor eu,
+        //            vehicula sodales neque. Ut et " "efficitur neque. Quisque
+        //            sed finibus sem, sed laoreet metus. " "Donec tincidunt ut
+        //            neque a fringilla. Donec bibendum, enim et " "condimentum
+        //            lobortis, velit nunc semper magna, ut malesuada nibh"
+        //            "ipsum et diam. Curabitur aliquam, orci dictum congue
+        //            sodales, " "elit diam mollis orci, vel eleifend neque
+        //            tortor vitae felis. " "Morbi suscipit vel ipsum consequat
+        //            fermentum.", f, 400, 100, 400, MIN_DEPTH, vec3(1.0f, 0.0f,
+        //            0.0f));
 
         for (auto tile : floor)
             eng->add_object(tile, main_camera);
 
         if (!floor.empty())
-            eng->draw(manager.get_texture("floor"), main_camera);
+            eng->draw(manager.get_texture("floor"), main_camera, nullptr);
 
         for (auto brick : bricks)
             eng->add_object(brick, main_camera);
 
         if (!bricks.empty())
-            eng->draw(manager.get_texture("brick"), main_camera);
+            eng->draw(manager.get_texture("brick"), main_camera, nullptr);
 
         for (auto bullet : bullets) {
             bullet->move(delta_time);
@@ -321,17 +334,17 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         if (!bullets.empty())
-            eng->draw(manager.get_texture("bullet"), main_camera);
+            eng->draw(manager.get_texture("bullet"), main_camera, nullptr);
 
         eng->add_object(hero, main_camera);
-        eng->draw(manager.get_texture("hero"), main_camera);
+        eng->draw(manager.get_texture("hero"), main_camera, nullptr);
 
         for (auto e : entities) {
             if (dynamic_cast<enemy*>(e) != nullptr)
                 eng->add_object(e, main_camera);
         }
         if (!entities.empty())
-            eng->draw(manager.get_texture("tank"), main_camera);
+            eng->draw(manager.get_texture("tank"), main_camera, nullptr);
 
         for (auto effect : se) {
             effect->update_frame();
@@ -339,11 +352,23 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         if (!se.empty())
-            eng->draw(manager.get_texture("explosion"), main_camera);
+            eng->draw(manager.get_texture("explosion"), main_camera, nullptr);
+
+        int j = 0;
+        for (auto quad : non_material_quads) {
+            eng->add_object(quad, main_camera);
+            quad->alpha_channel -= delta_time * 5;
+            eng->draw(manager.get_texture("hero"), main_camera, quad);
+            if (quad->alpha_channel <= 0.05f) {
+                delete *(non_material_quads.begin() + j);
+                non_material_quads.erase(non_material_quads.begin() + j);
+                continue;
+            }
+        }
 
         animated_block->update();
         eng->add_object(animated_block, main_camera);
-        eng->draw(manager.get_texture("obelisk"), main_camera);
+        eng->draw(manager.get_texture("obelisk"), main_camera, nullptr);
 
         eng->GL_swap_buffers();
 

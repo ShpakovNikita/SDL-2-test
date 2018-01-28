@@ -21,6 +21,7 @@ class player : public CHL::life_form {
     void move(float dt) override;
     void fire();
     void super_fire();
+    void blink();
 
     CHL::point mouth_cursor;
     CHL::point shooting_point;
@@ -32,8 +33,12 @@ class player : public CHL::life_form {
    private:
     float shoot_delay = 0.7f;
     float super_delay = 5.0f;
+    float blink_delay = 1.0f;
+
+    float blinking_path = 32;
 
     bool moving = false;
+    bool blinking = false;
 };
 
 #endif /* PLAYER_H_ */

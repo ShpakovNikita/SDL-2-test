@@ -360,6 +360,13 @@ void autotile(int** map_grid, CHL::instance*** grid, int x_size, int y_size) {
                         grid[y][x]->selected_tileset = 1;
                         grid[y][x]->selected_frame = 9;
                     }
+                    //                    } else if (map_grid[y - 1][x] == 0 &&
+                    //                               map_grid[y + 1][x] == 0 &&
+                    //                               map_grid[y][x + 1] == 1 &&
+                    //                               map_grid[y][x - 1] == 1) {
+                    //                        grid[y][x]->selected_tileset = 0;
+                    //                        grid[y][x]->selected_frame = 1;
+                    //                    }
 
                 } else {
                     if (vertical_bonds && right_bonds &&

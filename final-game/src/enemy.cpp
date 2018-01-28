@@ -12,6 +12,7 @@
 #include "headers/game_constants.h"
 #include "headers/game_functions.hxx"
 
+std::vector<CHL::instance*> non_material_quads;
 std::vector<CHL::life_form*> entities;
 std::vector<CHL::instance*> bricks;
 std::vector<bullet*> bullets;

@@ -87,79 +87,61 @@ static std::array<std::string, 18> event_names = {
     "turn_off"};
 
 static std::string fragment_glsl =
-    "out vec4 color;"
-
-    "in vec4 vertex_color;"
-    "in vec2 tex_coord;"
+    "varying vec4 vertex_color;"
+    "varying vec2 tex_coord;"
 
     "uniform sampler2D our_texture;"
 
     "void main()"
     "{"
-    "color = texture(our_texture, tex_coord) * vertex_color;"
-    "}";
-
-static std::string test_fragment_glsl =
-    "out vec4 color;"
-
-    "in vec4 vertex_color;"
-    "in vec2 tex_coord;"
-
-    "uniform sampler2D our_texture;"
-
-    "void main()"
-    "{"
-    "color = texture(our_texture, tex_coord) * vec4(0.0, 0.5f, 0.5f, 1.0f);"
+    "gl_FragColor = texture(our_texture, tex_coord) * vertex_color;"
     "}";
 
 static std::string text_fragment_glsl =
-    "out vec4 color;"
-
-    "in vec4 vertex_color;"
-    "in vec2 tex_coord;"
+    "varying vec4 vertex_color;"
+    "varying vec2 tex_coord;"
 
     "uniform sampler2D our_texture;"
 
     "void main()"
     "{"
     "vec4 sampled = vec4(1.0, 1.0, 1.0, texture(our_texture, tex_coord).r);"
-    "color = sampled * vertex_color;"
+    "gl_FragColor = sampled * vertex_color;"
     "}";
 
 static std::string vertex_glsl =
-    "layout (location = 0) in vec3 position;"
-    "layout (location = 1) in vec2 texCoord;"
+    "attribute vec3 position;"
+    "attribute vec2 texCoord;"
 
-    "out vec4 vertex_color;"
-    "out vec2 tex_coord;"
+    "varying vec4 vertex_color;"
+    "varying vec2 tex_coord;"
 
-    "uniform vec3 our_color;"
+    "uniform vec4 our_color;"
     "uniform mat4 transform;"
     "uniform mat4 projection;"
 
     "void main()"
     "{"
     "gl_Position = projection * transform * vec4(position, 1.0);"
-    "vertex_color = vec4(our_color, 1.0f);"
+    "vertex_color = our_color;"
     "tex_coord = vec2(texCoord.x, 1.0 - texCoord.y);"
     "}";
 
 static std::string text_vertex_glsl =
-    "layout (location = 0) in vec3 position;"
-    "layout (location = 1) in vec2 texCoord;"
+    "attribute vec3 position;"
+    "attribute vec2 texCoord;"
 
-    "out vec4 vertex_color;"
-    "out vec2 tex_coord;"
+    "varying vec2 tex_coord;"
+    "varying vec4 vertex_color;"
 
-    "uniform vec3 our_color;"
+    "uniform vec3 color;"
     "uniform mat4 transform;"
-    "uniform mat4 projection;"
 
     "void main()"
     "{"
-    "gl_Position = projection * transform * vec4(position, 1.0);"
-    "vertex_color = vec4(our_color, 1.0f);"
-    "tex_coord = vec2(texCoord.x, 1.0 - texCoord.y);"
+    " gl_Position = transform * vec4(position, 1.0);"
+    "  tex_coord = texCoord;"
+    "   vertex_color = vec4(color, 1.0);"
     "}";
 
 const std::array<bind, 8> bindings{
@@ -431,7 +413,6 @@ class engine_impl final : public engine {
     int virtual_h = 0;
 
     int _x = 0, _y = 0;
-    GLuint vao, vbo;
 
     void GL_unbind() {
         glBindBuffer(GL_ARRAY_BUFFER, 0);    // test
@@ -566,6 +547,9 @@ class engine_impl final : public engine {
 
         shader_program = create_shader_program(vertex_shader, fragment_shader);
 
+        glBindAttribLocation(shader_program, 0, "position");
+        glBindAttribLocation(shader_program, 1, "texCoord");
+
         GLuint text_vertex_shader =
             compile_shader(text_vertex_glsl.c_str(), GL_VERTEX_SHADER);
 
@@ -574,6 +558,9 @@ class engine_impl final : public engine {
 
         text_shader_program =
             create_shader_program(text_vertex_shader, text_fragment_shader);
+
+        glBindAttribLocation(text_shader_program, 0, "position");
+        glBindAttribLocation(text_shader_program, 1, "texCoord");
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -586,8 +573,6 @@ class engine_impl final : public engine {
 
         glEnable(GL_SCISSOR_TEST);
         glScissor(0, 0, w_w, w_h);
-
-        glGenBuffers(1, &vbo);
 
         t_size = size;
 
@@ -628,13 +613,18 @@ class engine_impl final : public engine {
         virtual_h = _h;
     };
 
-    void draw(texture* text, camera* cam) final {
+    void draw(texture* text, camera* cam, instance* inst) final {
         glUseProgram(shader_program);
 
         text->bind();
+
         glUniform1i(glGetUniformLocation(shader_program, "our_texture"), 0);
 
+        GL_CHECK();
+        GLuint vbo;
+        glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        GL_CHECK();
         glBufferData(GL_ARRAY_BUFFER,
                      vertex_buffer.size() * sizeof(vertex_buffer[0]),
                      vertex_buffer.data(), GL_STATIC_DRAW);
@@ -642,12 +632,13 @@ class engine_impl final : public engine {
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
                               STRIDE_ELEMENTS * sizeof(GLfloat), (GLvoid*)0);
         glEnableVertexAttribArray(0);
+        GL_CHECK();
 
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
                               STRIDE_ELEMENTS * sizeof(GLfloat),
                               (GLvoid*)(3 * sizeof(GLfloat)));
         glEnableVertexAttribArray(1);
-
+        GL_CHECK();
         //        GLint vertexColorLocation =
         //            glGetUniformLocation(shader_program, "our_color");
         //        glUniform4f(vertexColorLocation, red, 0.2f, 0.0f, 1.0f);
@@ -672,10 +663,15 @@ class engine_impl final : public engine {
         }
 
         GLint color_pos = glGetUniformLocation(shader_program, "our_color");
-        //                float green = glm::cos(GL_time()) * 2;
-        //                float blue = glm::sin(GL_time());
+        float green = glm::sin(GL_time()) / 6;
+        float blue = glm::sin(GL_time()) / 6;
 
-        glUniform3f(color_pos, 1.0f, 1.0f, 1.0f);
+        if (inst != nullptr) {
+            glUniform4f(color_pos, 1.0f, /*0.4 + green*/ 1.0,
+                        /*0.4 + blue*/ 1.0, text->alpha * inst->alpha_channel);
+        } else
+            glUniform4f(color_pos, 1.0f, /*0.4 + green*/ 1.0,
+                        /*0.4 + blue*/ 1.0, text->alpha);
 
         GLint transformLoc = glGetUniformLocation(shader_program, "transform");
         glUniformMatrix4fv(transformLoc, 1, GL_FALSE,
@@ -692,14 +688,18 @@ class engine_impl final : public engine {
         vertex_buffer.clear();
         glUseProgram(0);
         text->unbind();
+        glDeleteBuffers(1, &vbo);
     }
 
     virtual void render_text(const std::string& text,
                              font* f,
                              float x,
                              float y,
+                             float offset,
                              int z_pos,
                              vec3 color) final {
+        GLuint vbo;
+        glGenBuffers(1, &vbo);
         glBindBuffer(GL_ARRAY_BUFFER, vbo);
         glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 5, nullptr,
                      GL_DYNAMIC_DRAW);
@@ -714,15 +714,9 @@ class engine_impl final : public engine {
 
         glUseProgram(text_shader_program);
 
-        glUniform3f(glGetUniformLocation(text_shader_program, "our_color"),
-                    color.x, color.y, color.z);
+        glUniform3f(glGetUniformLocation(text_shader_program, "color"), color.x,
+                    color.y, color.z);
         glActiveTexture(GL_TEXTURE0);
-
-        //        glm::mat4 projection = glm::ortho((float)w_w, 0.0f,
-        //        (float)w_h, 0.0f); GLint projectionLoc =
-        //            glGetUniformLocation(shader_program, "projection");
-        //        glUniformMatrix4fv(projectionLoc, 1, GL_FALSE,
-        //                           glm::value_ptr(projection));
 
         glm::mat4 transform;
         transform = glm::translate(
@@ -739,6 +733,7 @@ class engine_impl final : public engine {
         float z = glm::clamp(z_pos, MAX_DEPTH, MIN_DEPTH) / 2.0f / MAX_DEPTH;
 
         std::string::const_iterator c;
+        int beginning_x = x;
         for (c = text.begin(); c != text.end(); c++) {
             character ch = f->characters[*c];
 
@@ -755,22 +750,28 @@ class engine_impl final : public engine {
             glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
             GLfloat vertices[6][5] = {
-                {xpos, ypos + h, z, 0.0, 1.0},    {xpos, ypos, z, 0.0, 0.0},
-                {xpos + w, ypos, z, 1.0, 0.0},
+                {xpos, ypos + h, z, 0.0, 0.0},    {xpos, ypos, z, 0.0, 1.0},
+                {xpos + w, ypos, z, 1.0, 1.0},
 
-                {xpos, ypos + h, z, 0.0, 1.0},    {xpos + w, ypos, z, 1.0, 0.0},
-                {xpos + w, ypos + h, z, 1.0, 1.0}};
+                {xpos, ypos + h, z, 0.0, 0.0},    {xpos + w, ypos, z, 1.0, 1.0},
+                {xpos + w, ypos + h, z, 1.0, 0.0}};
 
             glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
             // Render quad
             glDrawArrays(GL_TRIANGLES, 0, 6);
             x += (ch.advance >> 6);
+            if (xpos > w_w - offset) {
+                y += 48.0f;
+                x = beginning_x;
+            }
             // Now advance cursors for next glyph (note that advance
             // is number of 1/64 pixels)
             // Bitshift by 6 to get value in pixels (2^6 = 64)
         }
 
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glDeleteBuffers(1, &vbo);
         glUseProgram(0);
 
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -827,10 +828,22 @@ class engine_impl final : public engine {
     }
 
     ~engine_impl() {
-        glDeleteVertexArrays(1, &vao);
-        glDeleteBuffers(1, &vbo);
+        //        glDeleteVertexArrays(1, &vao);
+        //        glDeleteBuffers(1, &vbo);
     }
 };
+
+user_interface::user_interface(camera* cam) {
+    focus_camera = cam;
+}
+
+user_interface::~user_interface() {
+    std::vector<instance*>::iterator e = user_interface_elements.begin();
+    for (; e != user_interface_elements.end(); e++) {
+        delete *e;
+        user_interface_elements.erase(e);
+    }
+}
 
 bool already_exist = false;
 
