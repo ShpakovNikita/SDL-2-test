@@ -41,6 +41,7 @@ enum class event {
     button2_released,
     /// mouse events
     left_mouse_pressed,
+    left_mouse_released,
     /// virtual console events
     turn_off
 };

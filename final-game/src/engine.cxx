@@ -815,6 +815,13 @@ class engine_impl final : public engine {
                         return true;
                     }
                     break;
+                case SDL_MOUSEBUTTONUP:
+                    if (event.button.button == SDL_BUTTON_LEFT) {
+                        e = event::left_mouse_released;
+                        e_type = event_type::released;
+                        return true;
+                    }
+                    break;
                 case SDL_MOUSEMOTION: {
                     _x = event.motion.x;
                     _y = event.motion.y;

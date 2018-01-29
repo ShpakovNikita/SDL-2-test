@@ -56,9 +56,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
     bool placed = false;
     player* hero = new player(0.0f, 7.0f, 0.0f, P_SPEED, TILE_SIZE);
     hero->weight = 2;
+    hero->register_keys(CHL::event::up_pressed, CHL::event::down_pressed,
+                        CHL::event::left_pressed, CHL::event::right_pressed,
+                        CHL::event::left_mouse_pressed,
+                        CHL::event::button1_pressed,
+                        CHL::event::button2_pressed, CHL::event::turn_off);
 
-    camera* main_camera = new camera(WINDOW_WIDTH / 8, WINDOW_HEIGHT / 8,
-                                     WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, hero);
+    camera* main_camera = new camera(VIRTUAL_WIDTH / 4, VIRTUAL_HEIGHT / 4,
+                                     VIRTUAL_WIDTH, VIRTUAL_HEIGHT, hero);
     entities.insert(entities.end(), hero);
     /* generate dungeon and place character */
 
@@ -114,7 +119,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
     int map_grid_pf[x_size * y_size];
     int count = 0;
-    int dest = 3;
+    int dest = 15;
     while (count < dest) {
         int x = rand() % x_size;
         int y = rand() % y_size;
@@ -136,7 +141,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     manager.add_sound("start_music", new sound(SND_FOLDER + START_MUSIC));
     manager.add_sound("move_sound", new sound(SND_FOLDER + MOVE_SOUND));
     manager.add_sound("shot_sound", new sound(SND_FOLDER + "shot.wav"));
-    //    manager.get_sound("start_music")->play();
+    manager.get_sound("start_music")->play();
 
     point shooting_point = point(14, -9);
     float prev_frame = eng->GL_time();
@@ -168,15 +173,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
                     break;
                 case event::select_pressed:
                     quit = true;
-                    break;
-                case event::button1_pressed:
-                    hero->super_fire();
-                    break;
-                case event::button2_pressed:
-                    hero->blink();
-                    break;
-                case event::left_mouse_pressed:
-                    hero->fire();
                     break;
                 default:
                     break;
@@ -239,8 +235,18 @@ int main(int /*argc*/, char* /*argv*/ []) {
                         bullets.erase(bullets.begin() + i);
 
                         if (--entities[j]->health <= 0) {
+                            hero->blink_to(point(entities[j]->position.x,
+                                                 entities[j]->position.y));
                             delete *(entities.begin() + j);
                             entities.erase(entities.begin() + j);
+                            bool exit = true;
+                            for (auto inst : entities) {
+                                if (dynamic_cast<enemy*>(inst) != nullptr) {
+                                    exit = false;
+                                }
+                            }
+                            if (exit)
+                                quit = true;
                         }
 
                         se.insert(se.end(),
