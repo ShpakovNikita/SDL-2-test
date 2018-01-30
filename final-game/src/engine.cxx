@@ -14,6 +14,8 @@
 #include <SDL2/SDL.h>
 
 #include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_platform.h>
 #include <assert.h>
 #include <algorithm>
 #include <iostream>
@@ -22,14 +24,25 @@
 #include <sstream>
 #include <array>
 
+#include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdlib.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <windows.h>
+#include <AL/al.h>
+#include <AL/alc.h>
 
-const std::string FRAGMENT_PATH = "shaders\\simple_fragment.glsl";
-const std::string VERTEX_PATH = "shaders\\simple_vertex.glsl";
+#ifdef __WINDOWS__
+#include <windows.h>
+#endif
+
+#define NUM_BUFFERS 3
+#define BUFFER_SIZE 4096
 
 #define GL_CHECK()                                                  \
     {                                                               \
@@ -516,6 +529,35 @@ class engine_impl final : public engine {
         SDL_GLContext gl_context = SDL_GL_CreateContext(window);
         assert(gl_context != nullptr);
 
+        /* Openal */
+
+        // Initialization
+        ALCdevice* device;
+        device = alcOpenDevice(NULL);    // select the "preferred device"
+
+        if (device) {
+            ALCcontext* context = alcCreateContext(device, NULL);
+            alcMakeContextCurrent(context);
+        }
+
+        alGetError();    // clear error code
+
+        vec3 listenerPos(0, 0, 0);    // listeners position
+        vec3 listenerVel(0, 0, 0);    // listern's velocity
+
+        // listeners orientation (forward, up)
+        //        float listenerOri[] = {0, 0, -1, 0, 1, 0};
+        //
+        //        alListener3f(AL_POSITION, listenerPos.x, listenerPos.y,
+        //        listenerPos.z); alListener3f(AL_VELOCITY, listenerVel.x,
+        //        listenerVel.y, listenerVel.z); alListenerfv(AL_ORIENTATION,
+        //        listenerOri); if (alGetError() != AL_NO_ERROR) {
+        //            std::cerr << "openal error: " << std::endl;
+        //            return EXIT_FAILURE;
+        //        }
+        /* Glew */
+
+#ifndef __ANDROID__
         GLenum glew_init = glewInit();
         if (glew_init != GLEW_OK) {
             std::cerr << "glewInit error " << glew_init << std::endl;
@@ -523,7 +565,7 @@ class engine_impl final : public engine {
 
             return EXIT_FAILURE;
         }
-
+#endif
         int gl_major_ver = 0;
         int res =
             SDL_GL_GetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, &gl_major_ver);
@@ -568,7 +610,7 @@ class engine_impl final : public engine {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
 
-        glAlphaFunc(GL_GREATER, 0.1);
+        glAlphaFunc(GL_GREATER, 0.03);
         glEnable(GL_ALPHA_TEST);
 
         glEnable(GL_SCISSOR_TEST);

@@ -14,13 +14,23 @@
 #define MIN_DEPTH 10000
 #define STRIDE_ELEMENTS 5
 
+#define MUSIC_BUFFER 262144
+#define NUM_OF_BUFFERS 2
+#define PITCH_FADE_VAL 0.005f
+
+#include <stdio.h>
 #include <vector>
 #include <string>
 #include <memory>
 #include <map>
 
+#define CHL_SUCCESS EXIT_SUCCESS
+#define CHL_FAILURE EXIT_FAILURE
+
 namespace CHL    // chlorine-5
 {
+enum class sound_type { effect, music };
+
 enum class event {
     /// input events
     left_pressed,
@@ -203,9 +213,13 @@ class sound {
     ~sound();
 
    private:
+    int alBindBuffer(const std::string& source, int id);
+
     uint32_t device_id;
     uint8_t* buffer;
     uint32_t buffer_size;
+    uint32_t al_buffer;
+    uint32_t al_source;
 };
 
 class user_interface {

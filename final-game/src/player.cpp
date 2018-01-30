@@ -171,9 +171,6 @@ void player::blink_to(const CHL::point& p) {
         blinking = true;
         blinking_path = CHL::get_distance(position.x, position.y, p.x, p.y);
         blinking_alpha = CHL::get_direction(p.x, p.y, position.x, position.y);
-        std::cout << position.x << " " << position.y << std::endl;
-        std ::cout << p.x << " " << p.y << std::endl;
-        std::cout << blinking_alpha << std::endl;
     }
 }
 

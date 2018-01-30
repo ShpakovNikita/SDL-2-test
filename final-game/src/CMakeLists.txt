@@ -12,7 +12,7 @@ resource_manager.cpp headers/resource_manager.h font.cxx)
 if(UNIX)
     set(PROJECT_LINK_LIB -lglew32 -lSDL2main -lSDL2 -lfreetype)
 else()
-    set(PROJECT_LINK_LIB -lmingw32 -lglew32 -lSDL2main -lSDL2 -mwindows -lopengl32 -lfreetype)
+    set(PROJECT_LINK_LIB -lmingw32 -lglew32 -lSDL2main -lSDL2 -mwindows -lopengl32 -lfreetype -lopenal32)
 endif(UNIX)
 
 

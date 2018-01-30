@@ -77,6 +77,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     for (int i = 0; i < y_size; i++)
         map_grid[i] = new int[x_size];
 
+    std::vector<instance*> floor;
     for (int y = 0; y < y_size; y++) {
         for (int x = 0; x < x_size; x++) {
             grid[y][x] = nullptr;
@@ -91,7 +92,14 @@ int main(int /*argc*/, char* /*argv*/ []) {
                 (*(bricks.end() - 1))->selected_frame = default_frame;
                 (*(bricks.end() - 1))->selected_tileset = default_tileset;
                 grid[y][x] = *(bricks.end() - 1);
-            } else if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
+            } else {
+                floor.insert(floor.end(), create_wall(x * TILE_SIZE,
+                                                      y * TILE_SIZE + TILE_SIZE,
+                                                      MAX_DEPTH, TILE_SIZE));
+                (*(floor.end() - 1))->frames_in_texture = 4;
+                (*(floor.end() - 1))->selected_frame = rand() % 4;
+            }
+            if (!placed && *(tile_set.begin() + y * x_size + x) == 0) {
                 hero->position.x = x * TILE_SIZE;
                 hero->position.y = y * TILE_SIZE + TILE_SIZE;
                 placed = true;
@@ -103,16 +111,6 @@ int main(int /*argc*/, char* /*argv*/ []) {
     autotile(map_grid, grid, x_size, y_size);
 
     /* load background */
-    std::vector<instance*> floor;
-    for (int y = 0; y < y_size; y++) {
-        for (int x = 0; x < x_size; x++) {
-            floor.insert(floor.end(),
-                         create_wall(x * TILE_SIZE, y * TILE_SIZE + TILE_SIZE,
-                                     MAX_DEPTH, TILE_SIZE));
-            (*(floor.end() - 1))->frames_in_texture = 4;
-            (*(floor.end() - 1))->selected_frame = rand() % 4;
-        }
-    }
 
     /* place enemies */
     std::vector<enemy*> enemies;
@@ -120,6 +118,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
     int map_grid_pf[x_size * y_size];
     int count = 0;
     int dest = 15;
+
     while (count < dest) {
         int x = rand() % x_size;
         int y = rand() % y_size;
@@ -141,9 +140,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
     manager.add_sound("start_music", new sound(SND_FOLDER + START_MUSIC));
     manager.add_sound("move_sound", new sound(SND_FOLDER + MOVE_SOUND));
     manager.add_sound("shot_sound", new sound(SND_FOLDER + "shot.wav"));
-    manager.get_sound("start_music")->play();
+    //    manager.get_sound("start_music")->play();
 
-    point shooting_point = point(14, -9);
     float prev_frame = eng->GL_time();
     bool quit = false;
 
@@ -158,6 +156,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
     animated_block->frames_in_animation = 11;
     animated_block->frames_in_texture = 11;
     animated_block->loop_animation(0.06f);
+
+    int frames = 0;
 
     /* running game loop */
     while (!quit) {
@@ -307,6 +307,7 @@ int main(int /*argc*/, char* /*argv*/ []) {
         }
 
         /* draw sprites */
+
         eng->GL_clear_color();
         //        eng->render_text(
         //            "KUNG FURY!!!!!!!!!! Class aptent taciti sociosqu ad
@@ -380,6 +381,8 @@ int main(int /*argc*/, char* /*argv*/ []) {
 
         /* dynamic sleep */
         float t = (eng->GL_time() - prev_frame) * 1000;
+        frames++;
+
         if (t > 1000 / FPS)
             std::cerr << "freeze" << std::endl;
         if (t < 1000 / FPS)
